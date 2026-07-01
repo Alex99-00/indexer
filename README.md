@@ -9,7 +9,9 @@ The source code is unchanged. The (inline) documentation is in German ;)
 make
 
 # Run
-See "bin/runT.sh" for example
+See "bin/runT.sh" for example how to index files.
+
+Query of words from the index file is done with stdin/stdout. 
 
 # License
 License is GPL v3.0
