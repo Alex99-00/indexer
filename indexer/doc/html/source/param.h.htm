@@ -1,0 +1,32 @@
+<HTML><BODY><PRE>
+
+#ifndef __PARAM_H
+#define __PARAM_H
+
+typedef struct {
+        char   *indexdatei;
+        int    indexexists;
+        char   **addList;
+        int    addListLen;
+        char   **subList;
+        int    subListLen;
+        int    help;
+        int    error;
+        int    fnotfound;
+}Parameter;
+
+
+void <A HREF="../refered/cleanupParameter.htm">cleanupParameter</A>( Parameter *param );
+
+Parameter <A HREF="../refered/evalParams.htm">evalParams</A>( int argc, char ** argv);
+
+void <A HREF="../refered/printParam.htm">printParam</A>( Parameter param );
+
+
+#else
+#error "Multiple include"
+#endif
+
+
+<FONT COLOR="#00A000">/*EOF*/</FONT>
+</PRE></BODY></HTML>

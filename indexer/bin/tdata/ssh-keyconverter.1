@@ -1,0 +1,155 @@
+.\" Manpage for ssh-keyconverter
+.\"
+.Dd February 2, 2002
+.Dt SSH-KEYCONVER 1
+.Os
+.Sh NAME
+.Nm ssh-keyconvert
+.Nd convert ssh v1 keys and authorization files
+.Sh SYNOPSIS
+.Nm ssh-keyconvert
+.Op Fl k
+.Op Fl o Ar output_file
+.Ar identity_file ...
+.Nm ssh-keyconvert
+.Op Fl a
+.Op Fl o Ar output_file
+.Ar authorization_file ...
+.Sh DESCRIPTION
+.Nm
+converts RSA public and private keys used for public key based
+user authentication with protocol version 1 to the format
+used with protocol version 2.
+.Pp
+When using RSA user authentication with SSH protocol version 1,
+the client uses the private key from
+.Pa $HOME/.ssh/identity
+to provide its identity to the server. The server grants or denies
+access based on whether the public part of this key is listed in
+.Pa $HOME/.ssh/authorized_keys .
+.Pp
+SSH protocol version 2 supports both DSA and RSA keys, but the
+way RSA keys are stored are differently. On the client, the default
+file name is
+.Pa .ssh/id_rsa
+rather than
+.Pa .ssh/identity ,
+and the file's format is different as well. On the server, the
+public porting of the key can still be stored in
+.Pa .ssh/authorized_keys ,
+but the key notation has changed as well.
+Therefore, when switching from protocol version 1
+to version 2, you either have to create a new identity key using
+.Xr ssh-keygen 1
+and add that key to the server's
+.Pa authorized_keys
+file, or you need to convert your keys using
+.Nm ssh-keyconvert .
+.Pp
+By default,
+.Nm
+will try to guess the type of file that is to be converted.
+If it fails to guess correctly, you can tell if what type of
+conversion to perform by specifying the
+.Fl k
+option to convert the private key, or the
+.Fl a
+option to convert an authorisation file.
+.Pp
+When converting your private keys stored in
+.Pa .ssh/identity ,
+.Nm
+will read the private key, prompting you for the pass phrase
+if the key is protected by a pass phrase. If the
+.Fl o
+option is given, it will write the private key to the specified
+file, using version 2 syntax. If the key was protected by a
+pass phrase, it will use the same pass phrase to protect the new
+file.
+It will also write the public portion of the key to a second file,
+using the specified file name with
+.Dq .pub
+appended.
+If the 
+.Fl o
+option was not given, private and public key will be written to
+.Pa id_rsa
+and
+.Pa id_rsa.pub ,
+respectively, relative to the directory of the input key file.
+.Pp
+If the destination file already exists,
+.Nm
+will prompt the user for confirmation before overwriting the
+file, unless the
+.Fl f
+option is given.
+.Pp
+When converting your
+.Pa authorized_keys
+file,
+.Nm
+will ignore any keys in SSH version 2 format. Any public keys
+in version 1 format will be converted and appended to the output file
+using the new syntax. If the
+.Fl o
+option is given, keys are appended to the specified file. If it
+is not given,
+.Nm
+will append all keys to the input file.
+.Pp
+Note that
+.Nm
+does not check for duplicate keys, so if you run it on
+.Pa .ssh/authorized_keys
+more several times, the converted keys will show up several times.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl k
+Convert private key file(s). The default is to guess the
+type of file that should be converted.
+.It Fl a
+Convert 
+.Pa authorized_keys
+file(s). The default is to guess the
+type of file that should be converted.
+.It Fl o Ar outfile
+Specify the name of the output file.
+When converting an authorization file, all public keys will
+be appended to this file.
+For private key conversion, the private and public components of
+the key will be stored in
+.Pa outfile
+and
+.Pa outfile.pub ,
+respectively.
+Note that since every key must be stored in a separate file, you
+cannot use this option when you specify several input files.
+.It Fl f
+When converting a key file, and the output file already exists,
+.Nm
+will ask the user whether to overwrite the file. Using this option
+forces overwriting.
+.El
+.Sh AUTHORS
+OpenSSH is a derivative of the original and free
+ssh 1.2.12 release by Tatu Ylonen.
+Aaron Campbell, Bob Beck, Markus Friedl, Niels Provos,
+Theo de Raadt and Dug Song
+removed many bugs, re-added newer features and
+created OpenSSH.
+.Nm
+was contributed by Olaf Kirch.
+.Sh SEE ALSO
+.Xr ssh 1 ,
+.Xr ssh-add 1 ,
+.Xr ssh-agent 1 ,
+.Xr sshd 8
+.Rs
+.%A J. Galbraith
+.%A R. Thayer
+.%T "SECSH Public Key File Format"
+.%N draft-ietf-secsh-publickeyfile-01.txt
+.%D March 2001
+.%O work in progress material
+.Re

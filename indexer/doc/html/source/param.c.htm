@@ -1,0 +1,476 @@
+<HTML><BODY><PRE>
+<FONT COLOR="#00A000">/*
+BEGIN  C-Head v0.2
+
+
+  -Von:
+   Alexander Klupsch, ia3394
+
+
+  -Dateiname:
+   param.c
+
+
+  -Sprache:
+   ANSI-C
+
+
+  -Main(0|1):
+   0
+
+
+  -Zweck/Beschreibung:
+   Parameterauswertung
+
+
+
+  -Programm:
+   indexer
+
+
+  -Besonderheiten:
+   
+END---------------------------------------------------------------------75->
+*/</FONT>
+
+#include &lt;stdio.h>
+#include &lt;string.h>
+#include &lt;assert.h>
+
+#include &lt;param.h>
+#include &lt;datei.h>
+#include &lt;alloc.h>
+
+
+<FONT COLOR="#00A000">/* Gueltige Parameter */</FONT>
+static char *validParams[] = { "-a", "--add", "-s", "--sub" };
+
+<FONT COLOR="#00A000">/* Anzahl gueltiger Parameter */</FONT>
+static int maxValidParam = 4;
+
+
+
+<FONT COLOR="#00A000">/* 
+  Gibt Parameter Struktur auf stdout aus. 
+  
+  IN: param - Parameter
+  
+  OUT: 
+*/</FONT>
+void <A HREF="../refered/printParam.htm">printParam</A>( Parameter param ) <A NAME="printParam">{</A>
+     int i;
+     
+     printf("indexdatei: %s\n", param.indexdatei );
+     printf("indexexists: %d\n", param.indexexists );
+    
+     printf("addListLen: %d\n", param.addListLen );
+     for (i=0; i&lt;param.addListLen; i++) 
+          printf("addList[%d]: %s\n", i, param.addList[i] );
+    
+    
+    
+     printf("subListLen: %d\n", param.subListLen );
+     for (i=0; i&lt;param.subListLen; i++) 
+          printf("subList[%d]: %s\n", i, param.subList[i] );
+    
+    
+     printf("help:  %d\n", param.help );
+     printf("error: %d\n", param.error );
+     
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Initialisiert eine Parameter Struktur.
+  
+  IN: param - Parameter
+  
+  OUT:
+*/</FONT>
+static void <A HREF="../refered/iniParameter.htm">iniParameter</A>( Parameter *param ) <A NAME="iniParameter">{</A>
+  
+     assert( param != NULL );
+     
+          
+     param->indexdatei  = NULL;
+     param->indexexists = 0;
+     param->addList     = NULL;
+     param->addListLen  = 0;
+     param->subList     = NULL;
+     param->subListLen  = 0;
+     param->help        = 0;
+     param->error       = 0;
+     param->fnotfound   = 0;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Loescht eine Parameter Struktur komplett.
+  
+  IN: param - Parameter
+  
+  OUT: 
+*/</FONT>
+void <A HREF="../refered/cleanupParameter.htm">cleanupParameter</A>( Parameter *param ) <A NAME="cleanupParameter">{</A>
+     int i;
+
+     if ( param == NULL )
+          return ;
+     
+     param->indexdatei = <A HREF="../refered/FREE.htm" NAME="FREE10">FREE</A>( param->indexdatei );
+
+     for ( i=0; i &lt; param->addListLen; i++ ) {
+           param->addList[i] = <A HREF="../refered/FREE.htm" NAME="FREE11">FREE</A>( param->addList[i] );
+     }
+     param->addList = <A HREF="../refered/FREE.htm" NAME="FREE12">FREE</A>( param->addList );
+
+
+     for ( i=0; i &lt; param->subListLen; i++ ) {
+           param->subList[i] = <A HREF="../refered/FREE.htm" NAME="FREE13">FREE</A>( param->subList[i] );
+     }
+     param->subList = <A HREF="../refered/FREE.htm" NAME="FREE14">FREE</A>( param->subList );
+
+     <A HREF="../refered/iniParameter.htm" NAME="iniParameter1">iniParameter</A>( param ); <FONT COLOR="#00A000">/* Reset */</FONT>
+     
+     return ;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Sucht Index von "fname" in "param.subList[]"
+
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: false(-1)|true(pos)
+*/</FONT>
+static int <A HREF="../refered/isInSubList.htm">isInSubList</A>( Parameter *param, char *fname ) <A NAME="isInSubList">{</A>
+    int i;
+    
+    assert((param != NULL) && (fname != NULL));
+    
+    for ( i = 0; i &lt; param->subListLen; i++ ) {
+          if ( strcmp(param->subList[i], fname) == 0 )
+               return i;
+    }
+    
+    return (-1);
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Sucht Index von "fname" in "param.addList[]"
+
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: false(-1)|true(pos)
+*/</FONT>
+static int <A HREF="../refered/isInAddList.htm">isInAddList</A>( Parameter *param, char *fname ) <A NAME="isInAddList">{</A>
+    int i;
+    
+    assert((param != NULL) && (fname != NULL));
+    
+    for ( i = 0; i &lt; param->addListLen; i++ ) {
+          if ( strcmp(param->addList[i], fname) == 0 )
+               return i;
+    }
+    
+    return (-1);
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Loescht einen Dateinamen aus "param.subList[]"
+
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: ok(0)
+*/</FONT>
+static void <A HREF="../refered/removeFromSubList.htm">removeFromSubList</A>( Parameter *param, char *fname ) <A NAME="removeFromSubList">{</A>
+    int fidx, i;
+    
+    assert((param != NULL) && (fname != NULL));
+    
+    fidx = <A HREF="../refered/isInSubList.htm" NAME="isInSubList1">isInSubList</A>( param, fname );
+    
+    if (fidx&lt;0)
+        return ;
+        
+    param->subList[fidx] = <A HREF="../refered/FREE.htm" NAME="FREE15">FREE</A>(param->subList[fidx]);
+    
+    for ( i = fidx; i &lt; (param->subListLen-1); i++ ) {
+          param->subList[i] = param->subList[i+1];
+    }
+        
+    param->subList = <A HREF="../refered/REALLOC.htm" NAME="REALLOC6">REALLOC</A>(param->subList, 
+                     (size_t)(sizeof(char *) * param->subListLen));
+
+    --param->subListLen;
+    
+    return ;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Loescht einen Dateinamen aus "param.addList[]"
+
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: ok(0)
+*/</FONT>
+static void <A HREF="../refered/removeFromAddList.htm">removeFromAddList</A>( Parameter *param, char *fname ) <A NAME="removeFromAddList">{</A>
+    int fidx, i;
+    
+    assert((param != NULL) && (fname != NULL));
+    
+    fidx = <A HREF="../refered/isInAddList.htm" NAME="isInAddList1">isInAddList</A>( param, fname );
+    
+    if (fidx&lt;0)
+        return ;
+        
+    param->addList[fidx] = <A HREF="../refered/FREE.htm" NAME="FREE16">FREE</A>(param->addList[fidx]);
+    
+    for ( i = fidx; i &lt; (param->addListLen-1); i++ ) {
+          param->addList[i] = param->addList[i+1];
+    }
+    
+    param->addList = <A HREF="../refered/REALLOC.htm" NAME="REALLOC7">REALLOC</A>(param->addList, 
+                     (size_t)(sizeof(char *) * param->addListLen));
+
+    --param->addListLen;
+    
+    return ;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Fuegt einen Dateinamen zu "param.addList[]" hinzu.
+
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT:
+*/</FONT>
+static void <A HREF="../refered/addToAddList.htm">addToAddList</A>( Parameter *param, char *fname ) <A NAME="addToAddList">{</A>
+    
+    assert((param != NULL) && (fname != NULL));
+    
+    param->addList = <A HREF="../refered/REALLOC.htm" NAME="REALLOC8">REALLOC</A>( param->addList, 
+                     (size_t)(sizeof(char *) * (param->addListLen+1)) );
+    
+    param->addList[param->addListLen] = <A HREF="../refered/MALLOC.htm" NAME="MALLOC5">MALLOC</A>( (size_t)(strlen(fname)+1) );
+    
+    memmove( param->addList[param->addListLen], fname, 
+             (size_t)(strlen(fname)+1) );
+    
+    ++param->addListLen;
+    
+    return ;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Fuegt einen Dateinamen zu "param.subList[]" hinzu.
+
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT:
+*/</FONT>
+static void <A HREF="../refered/addToSubList.htm">addToSubList</A>( Parameter *param, char *fname ) <A NAME="addToSubList">{</A>
+
+    assert((param != NULL) && (fname != NULL));
+
+    param->subList = <A HREF="../refered/REALLOC.htm" NAME="REALLOC9">REALLOC</A>( param->subList, 
+                     (size_t)(sizeof(char *) * (param->subListLen+1)) );
+    
+    param->subList[param->subListLen] = <A HREF="../refered/MALLOC.htm" NAME="MALLOC6">MALLOC</A>( (size_t)(strlen(fname)+1) );
+    
+    memmove( param->subList[param->subListLen], fname, 
+             (size_t)(strlen(fname)+1) );
+    
+    ++param->subListLen;
+    
+    return ;
+}
+
+
+
+<FONT COLOR="#00A000">/* !!! assume argv[0] = fileName.self !!! 
+
+  Wertet die Programm Parameter aus und erstellt eine Parameter Struktur
+  daraus.
+  
+  IN: argc - Anzahl Parameter
+      argv - Programm Parameter
+  
+  OUT return - Parameter Struktur
+*/</FONT>
+Parameter <A HREF="../refered/evalParams.htm">evalParams</A>( int argc, char ** argv) <A NAME="evalParams">{</A>
+
+     <FONT COLOR="#00A000">/* result */</FONT>
+     Parameter param;
+     
+     <A HREF="../refered/iniParameter.htm" NAME="iniParameter2">iniParameter</A>( &param );
+
+     <FONT COLOR="#00A000">/* keine Parameter */</FONT>
+     if ( argc == 1 ) {
+          param.help = 1;
+          return param;
+     }
+     
+     
+     <FONT COLOR="#00A000">/* -h|--help mit argc=2 */</FONT>
+     if ( (argc == 2) && 
+          ( 
+            (memcmp(argv[1], "-h",     strlen("-h"))==0) || 
+            (memcmp(argv[1], "--help", strlen("--help"))==0) 
+          ) 
+        ) {
+          param.help = 1;
+          return param;
+     }
+     
+
+     <FONT COLOR="#00A000">/* mahr als ein Parameter und -h|--help angegeben -> Fehler */</FONT>
+     if ( argc > 2 ) {
+     
+        int i;
+        for ( i=1; i&lt;argc; i++ ) {
+        
+            if ( (memcmp(argv[i], "-h",     strlen("-h"))==0) || 
+                 (memcmp(argv[i], "--help", strlen("--help"))==0) 
+               ) {
+                   param.error = 1;
+                   return param;
+               } <FONT COLOR="#00A000">/*if*/</FONT>
+               
+        }<FONT COLOR="#00A000">/*for*/</FONT>
+        
+     }<FONT COLOR="#00A000">/*if*/</FONT>
+     
+     
+     <FONT COLOR="#00A000">/*-------------------------------------------------------------------*/</FONT>
+    {<FONT COLOR="#00A000">/*BLOCK0*/</FONT>
+     int vp, av=0, found; <FONT COLOR="#00A000">/* vp = index in validParam;   
+                             av = index in argv */</FONT>
+
+     while ( ++av &lt; argc ) { <FONT COLOR="#00A000">/* fuer alle argv[av] */</FONT>            
+             found = 0;
+             
+             
+       <FONT COLOR="#00A000">/* alle validParam[vp] testen */</FONT>
+       for ( vp = 0; vp &lt; maxValidParam; vp++ ) { 
+       
+
+             <FONT COLOR="#00A000">/* validParam in argv[av] gefunden */</FONT>             
+             if ( strcmp(argv[av], validParams[vp]) == 0 ) {
+
+                  ++av;  <FONT COLOR="#00A000">/* next = param value */</FONT>
+
+                  if ( (av > argc) || (argv[av] == NULL) ) {
+                       <A HREF="../refered/cleanupParameter.htm" NAME="cleanupParameter2">cleanupParameter</A>(&param); 
+                       param.error = 1;
+                       return param;
+                  }
+		                                          <FONT COLOR="#00A000">/* Orginaldatei muss nicht
+					                                     existieren fuer --sub */</FONT>
+                  if ( ((<A HREF="../refered/findFile.htm" NAME="findFile2">findFile</A>( argv[av])==1) || ((vp==2)||(vp==3))) ) {
+                       found = 1;
+                       switch (vp) {
+                       
+                         <FONT COLOR="#00A000">/*-----------------------------------------------*/</FONT>
+                         case 0: 
+                         case 1:
+                         
+                         if ( <A HREF="../refered/isInAddList.htm" NAME="isInAddList2">isInAddList</A>( &param, argv[av] ) >= 0 )
+                              continue;
+                              
+                         if ( <A HREF="../refered/isInSubList.htm" NAME="isInSubList2">isInSubList</A>( &param, argv[av] ) >= 0 ) {
+                              <A HREF="../refered/removeFromSubList.htm" NAME="removeFromSubList1">removeFromSubList</A>( &param, argv[av] );
+                              continue;
+                         }
+                              
+                         <A HREF="../refered/addToAddList.htm" NAME="addToAddList1">addToAddList</A>( &param, argv[av] );
+                         vp = maxValidParam;<FONT COLOR="#00A000">/*break for (vp)*/</FONT>
+                         break;
+
+                         <FONT COLOR="#00A000">/*-----------------------------------------------*/</FONT>
+                         case 2: 
+                         case 3: 
+                         
+                         if ( <A HREF="../refered/isInSubList.htm" NAME="isInSubList3">isInSubList</A>( &param, argv[av] ) >= 0 )
+                              continue;
+                              
+                         if ( <A HREF="../refered/isInAddList.htm" NAME="isInAddList3">isInAddList</A>( &param, argv[av] ) >= 0 ) {
+                              <A HREF="../refered/removeFromAddList.htm" NAME="removeFromAddList1">removeFromAddList</A>( &param, argv[av] );
+                              continue;
+                         }
+                         
+                         <A HREF="../refered/addToSubList.htm" NAME="addToSubList1">addToSubList</A>( &param, argv[av] );
+                         vp = maxValidParam;<FONT COLOR="#00A000">/*break for (vp)*/</FONT>
+                         break;
+
+                         <FONT COLOR="#00A000">/*-----------------------------------------------*/</FONT>
+                         default: 
+                                 <A HREF="../refered/cleanupParameter.htm" NAME="cleanupParameter3">cleanupParameter</A>(&param); 
+                                 param.error = 1;
+                                 return param; 
+                         break;
+                         
+                       }<FONT COLOR="#00A000">/*switch*/</FONT>                       
+
+                  } else {
+                       <A HREF="../refered/cleanupParameter.htm" NAME="cleanupParameter4">cleanupParameter</A>(&param);
+                       param.fnotfound = av;
+                       return param;
+                  }<FONT COLOR="#00A000">/* if-else (findFile) */</FONT>              
+                  
+             }<FONT COLOR="#00A000">/*if (strcmp) */</FONT>
+             
+              
+       }<FONT COLOR="#00A000">/*for (vp)*/</FONT>
+      
+       if ( found==0 ) { 
+            
+           if ( param.indexdatei != NULL) { <FONT COLOR="#00A000">/* schon vorhanden */</FONT>
+                <A HREF="../refered/cleanupParameter.htm" NAME="cleanupParameter5">cleanupParameter</A>(&param);
+                param.error = 1;
+                return param;
+           }
+           
+           param.indexdatei = (char *)<A HREF="../refered/MALLOC.htm" NAME="MALLOC7">MALLOC</A>((size_t)(strlen(argv[av])+1));
+           memmove(param.indexdatei, argv[av],(size_t)(strlen(argv[av])+1));
+                        
+           if ( <A HREF="../refered/findFile.htm" NAME="findFile3">findFile</A>( argv[av] ) ) {
+                param.indexexists = 1;
+                
+           } else {
+                param.indexexists = 0;
+           }
+            
+       }<FONT COLOR="#00A000">/*if (! found)*/</FONT>
+       
+     }<FONT COLOR="#00A000">/*while (av)*/</FONT>
+     
+     
+    }<FONT COLOR="#00A000">/*BLOCK0*/</FONT>
+     
+    
+     return param;
+
+}
+
+<FONT COLOR="#00A000">/*EOF*/</FONT>
+</PRE></BODY></HTML>

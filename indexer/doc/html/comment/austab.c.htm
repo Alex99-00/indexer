@@ -1,0 +1,26 @@
+<HTML><BODY><B>austab.c</B><BR><PRE>
+<BR><B><A HREF="../refered/printAustab.htm" NAME="printAustab">printAustab</A></B>
+void printAustab( Austab *atbl ) 
+<BR>
+  Gibt den Inhalt einer Ausschlusstabelle aus.
+  
+  IN: atbl - Zeiger auf eine Ausschlusstabelle
+  
+  OUT: atbl - Initialisierte Auschlusstabelle
+<BR>
+<BR><B><A HREF="../refered/resetAustab.htm" NAME="resetAustab">resetAustab</A></B>
+static void resetAustab( Austab *atbl ) 
+<BR>
+<BR><B><A HREF="../refered/buildAustab.htm" NAME="buildAustab">buildAustab</A></B>
+int buildAustab( Austab *atbl ) 
+<BR>
+  Baut die Ausschlusstabelle auf.
+  Die Daten die angeben welche Zeichen Auszuschliessen sind, sind
+  in "austab.h" als "AUSTABDATA" definiert. Da die Daten fest
+  im Programm stehen, ist ein Fehlerfall eigentlich auszuschliessen.
+  
+  IN: atbl - Zeiger auf eine ATabelle
+  
+  OUT: atbl - Mit Daten gefuellte ATabelle 
+<BR>
+</PRE></BODY></HTML>

@@ -1,0 +1,85 @@
+.\" -*- nroff -*-
+.\" Copyright (C) 2002 Thorsten Kukuk
+.\" Author: Thorsten Kukuk <kukuk@suse.de>
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2 as
+.\" published by the Free Software Foundation.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software Foundation,
+.\" Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+.\"
+.TH chfn 1 "January 2002" "pwdutils"
+.SH NAME
+chfn \- change finger information
+.SH SYNOPSIS
+.TP 5
+\fBchfn\fR
+[\fB-f \fIname\fR] [\fB-r \fIroom\fR] [\fB-w \fIwork_phone\fR] [\fB-h \fIhome_phone\fR] [\fB-o \fIother\fR] [\fB-q\fR] [\fB-u\fR] [\fB-v\fR] [\fIuser\fR]
+.SH DESCRIPTION
+\fBchfn\fR is used to change the user finger information. This are
+the users fullname, office room number, office phone number and home phone
+number. This information is stored in the \fI/etc/passwd\fR file and
+typically printed by
+.BR finger (1)
+and similiar programs. A normal user may only change the fields for their
+own account, the super user may change the fields for any account. Also,
+only the super user may use the \fB-o\fR option to change the undefined
+portions of the GCOS field.
+.PP
+If no information is given on the command line, \fBchfn\fR operates in
+an interactive fashion, prompting the user for each field.
+Enter the new value to change the field, or leave the line blank to use
+the current value. Enter \fInone\fR or a blank only to remove the current
+value. The current value is displayed between a pair of \fB[ ]\fR marks.
+.PP
+The only restrictions placed on the contents of the fields is that no
+control characters may be present, nor any of comma, colon, or equal
+sign. The \fIother\fR field does not have this restriction, and is used to
+store accounting information used by other applications.
+.PP
+This version of \fBchfn\fR is able to change the shell of
+local, NIS, NIS+ and LDAP accounts, if the permissions allow
+it.
+.SH OPTIONS
+.TP
+.I "\-f, \-\-full-name"
+Specify your real name.
+.TP
+.I "\-r, \-\-room"
+Specify your office room number.
+.TP
+.I "\-w, \-\-work-phone"
+Specify your office phone number.
+.TP
+.I "\-h, \-\-home-phone"
+Specify your home phone number.
+.TP
+.I "\-o, \-\-other"
+Specify the undefined portions of the GCOS field.
+.TP
+.I "\-q, \-\-quite"
+Don't be verbose.
+.TP
+.I "\-u, \-\-usage"
+Print a usage message and exit.
+.TP
+.I "    \-\-help"
+Print a more verbose help text and exit.
+.TP
+.I "-v, \-\-version"
+Print version information and exit.
+.SH FILES
+/etc/passwd \- user account information
+.SH SEE ALSO
+.BR chsh (1),
+.BR finger (1),
+.BR passwd (5)
+.SH AUTHOR
+Thorsten Kukuk <kukuk@suse.de>

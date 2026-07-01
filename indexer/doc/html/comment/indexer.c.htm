@@ -1,0 +1,52 @@
+<HTML><BODY><B>indexer.c</B><BR><PRE>
+<BR><B><A HREF="../refered/printHelp.htm" NAME="printHelp">printHelp</A></B>
+void printHelp(void) 
+<BR>
+ 
+  Ausgabe der Hilfe auf stdout.
+<BR>
+<BR><B><A HREF="../refered/doParameterTest.htm" NAME="doParameterTest">doParameterTest</A></B>
+int doParameterTest( Parameter param, char **argv ) 
+<BR>
+  Auswertung der erstellten Parameter Struktur.
+  
+  IN: param - Parameter Struktur
+      argv - Programm Parameter
+<BR>
+<BR><B><A HREF="../refered/buildMode.htm" NAME="buildMode">buildMode</A></B>
+int buildMode( Parameter param ) 
+<BR>
+  Fuehrt alle noetigen Schritte aus um eine neue Indexdatei aufzubauen.
+  
+  Besonderheit:
+  Die printf(...) Meldungen sind auch Kommentare.
+  
+  IN: param - Parameter die zum aufbauen benoetgt werden.
+  
+  OUT: fehler(-1)|ok(0)
+<BR>
+<BR><B><A HREF="../refered/searchMode.htm" NAME="searchMode">searchMode</A></B>
+int searchMode( Parameter param ) 
+<BR>
+  Fuert alle noetigen Schritte aus um eine Indexdatei einzulesen,
+  eine Hashtabelle aufzubauen und diese dann zum durchsuchen zur
+  verfuegung zu stellen.
+  
+  Besonderheit:
+  Die printf(...) Meldungen sind auch Kommentare.
+  
+  IN: param - Parameter Struktur mit allen benoetigten Informationen
+  
+  OUT: return fehler(-1)|ok(0)
+<BR>
+<BR><B><A HREF="../refered/main.htm" NAME="main">main</A></B>
+int main(int argc, char **argv) 
+<BR>
+  Main des Programms Indexer
+  
+  IN: argc - Anzahl Parameter.
+      argv - Parameter
+  
+  OUT: return - exitcode
+<BR>
+</PRE></BODY></HTML>

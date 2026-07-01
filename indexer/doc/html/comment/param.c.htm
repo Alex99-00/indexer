@@ -1,0 +1,96 @@
+<HTML><BODY><B>param.c</B><BR><PRE>
+<BR><B><A HREF="../refered/printParam.htm" NAME="printParam">printParam</A></B>
+void printParam( Parameter param ) 
+<BR>
+ 
+  Gibt Parameter Struktur auf stdout aus. 
+  
+  IN: param - Parameter
+  
+  OUT: 
+<BR>
+<BR><B><A HREF="../refered/iniParameter.htm" NAME="iniParameter">iniParameter</A></B>
+static void iniParameter( Parameter *param ) 
+<BR>
+  Initialisiert eine Parameter Struktur.
+  
+  IN: param - Parameter
+  
+  OUT:
+<BR>
+<BR><B><A HREF="../refered/cleanupParameter.htm" NAME="cleanupParameter">cleanupParameter</A></B>
+void cleanupParameter( Parameter *param ) 
+<BR>
+  Loescht eine Parameter Struktur komplett.
+  
+  IN: param - Parameter
+  
+  OUT: 
+<BR>
+<BR><B><A HREF="../refered/isInSubList.htm" NAME="isInSubList">isInSubList</A></B>
+static int isInSubList( Parameter *param, char *fname ) 
+<BR>
+  Sucht Index von "fname" in "param.subList[]"
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: false(-1)|true(pos)
+<BR>
+<BR><B><A HREF="../refered/isInAddList.htm" NAME="isInAddList">isInAddList</A></B>
+static int isInAddList( Parameter *param, char *fname ) 
+<BR>
+  Sucht Index von "fname" in "param.addList[]"
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: false(-1)|true(pos)
+<BR>
+<BR><B><A HREF="../refered/removeFromSubList.htm" NAME="removeFromSubList">removeFromSubList</A></B>
+static void removeFromSubList( Parameter *param, char *fname ) 
+<BR>
+  Loescht einen Dateinamen aus "param.subList[]"
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: ok(0)
+<BR>
+<BR><B><A HREF="../refered/removeFromAddList.htm" NAME="removeFromAddList">removeFromAddList</A></B>
+static void removeFromAddList( Parameter *param, char *fname ) 
+<BR>
+  Loescht einen Dateinamen aus "param.addList[]"
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT: ok(0)
+<BR>
+<BR><B><A HREF="../refered/addToAddList.htm" NAME="addToAddList">addToAddList</A></B>
+static void addToAddList( Parameter *param, char *fname ) 
+<BR>
+  Fuegt einen Dateinamen zu "param.addList[]" hinzu.
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT:
+<BR>
+<BR><B><A HREF="../refered/addToSubList.htm" NAME="addToSubList">addToSubList</A></B>
+static void addToSubList( Parameter *param, char *fname ) 
+<BR>
+  Fuegt einen Dateinamen zu "param.subList[]" hinzu.
+  IN: param - Parameter
+      fname - Dateiname
+      
+  OUT:
+<BR>
+<BR><B><A HREF="../refered/evalParams.htm" NAME="evalParams">evalParams</A></B>
+Parameter evalParams( int argc, char ** argv) 
+<BR>
+ !!! assume argv[0] = fileName.self !!! 
+  Wertet die Programm Parameter aus und erstellt eine Parameter Struktur
+  daraus.
+  
+  IN: argc - Anzahl Parameter
+      argv - Programm Parameter
+  
+  OUT return - Parameter Struktur
+<BR>
+</PRE></BODY></HTML>

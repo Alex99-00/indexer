@@ -1,0 +1,1423 @@
+<HTML><BODY><PRE>
+<FONT COLOR="#00A000">/*
+BEGIN  C-Head v0.2
+
+
+  -Von:
+   Alexander Klupsch, ia3394
+
+
+  -Dateiname:
+   hashtbl.c
+
+
+  -Sprache:
+   ANSI-C
+
+
+  -Main(0|1):
+   0
+
+
+  -Zweck/Beschreibung:
+   Aufbau und Verwaltung einer Hash Tabelle.
+
+
+  -Programm:
+   indexer
+
+
+  -Besonderheiten:
+   In den Beschreibungen wird eine Hashtabelle auch als HTBL bezeichnet
+   und eine Hashtabellen Struktur die als Wortliste benutzt wird mit WHTBL.
+
+END---------------------------------------------------------------------75->
+*/</FONT>
+
+#include &lt;stdio.h>
+#include &lt;string.h>
+#include &lt;assert.h>
+
+#include &lt;alloc.h>
+#include &lt;hashtbl.h>
+
+
+
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+<FONT COLOR="#00A000">/*
+  Berechnet ob Parameter "val" eine Primzahl ist.
+  
+  IN: val - zu testende Zahl
+  
+  OUT: return - true(1)|false(0) 
+*/</FONT>
+int <A HREF="../refered/isPrim.htm">isPrim</A>(unsigned int val) <A NAME="isPrim">{</A>    
+    unsigned int t;
+    
+    <FONT COLOR="#00A000">/* Spezialfälle */</FONT>
+    switch (val) {
+       case 1: return 1;
+       case 2: return 1;
+       case 3: return 1;
+    }
+    
+    <FONT COLOR="#00A000">/* Ist "val" gerade */</FONT>
+    if ((val % 2) == 0) {
+           return 0;
+    } else {
+    
+       t = 3;<FONT COLOR="#00A000">/* Kleinster ungerader Teiler*/</FONT>
+       
+       while ( t &lt; val ) { <FONT COLOR="#00A000">/* Solange (t<val) Teiler suchen */</FONT>
+             if ((val % t) == 0) {
+                 return 0; <FONT COLOR="#00A000">/* Teiler gefunden -> "val" keine Primzahl */</FONT>
+             } else {
+                 t += 2;
+             }
+       }<FONT COLOR="#00A000">/*while*/</FONT>
+       
+    }<FONT COLOR="#00A000">/*else*/</FONT>
+    
+    return 1;<FONT COLOR="#00A000">/* Kein Teiler fuer "val" gefunden -> "val" ist Primzahl */</FONT>
+}
+
+
+<FONT COLOR="#00A000">/*
+  Berechnet die naechstgroessere Primzahl zu "val".
+  
+  IN: val - Basiswert zu der die naechste Primzahl gesucht wird
+  
+  OUT: return - Primzahl
+*/</FONT>
+unsigned int <A HREF="../refered/calcNextPrim.htm">calcNextPrim</A>(unsigned int val) <A NAME="calcNextPrim">{</A>
+
+
+    switch (val) {    <FONT COLOR="#00A000">/* vorsichtig, nicht zu klein */</FONT>
+       case 1: return MINHTBLSIZE;
+       case 2: return MINHTBLSIZE;
+       case 3: return MINHTBLSIZE;
+    }
+    
+    ++val;<FONT COLOR="#00A000">/* Naechste Primzahl -> diese kann schon Prim. sein(per Zufall) */</FONT>
+    
+    if ((val % 2) == 0) 
+         ++val;         <FONT COLOR="#00A000">/* ungerade */</FONT>
+    
+    while ( <A HREF="../refered/isPrim.htm" NAME="isPrim1">isPrim</A>(val)==0 ) {
+            val += 2; <FONT COLOR="#00A000">/* Alle ungeraden bis naechste Primzahl */</FONT>
+    }
+    
+    return val; <FONT COLOR="#00A000">/* Primzahl */</FONT>
+}
+
+
+
+<FONT COLOR="#00A000">/* 
+   Berechnet einen Doppelhash Wert aus "val" und "htsize".
+   
+   ACHTUNG: htsize muss groesser sein als mod Wert
+   --> Endlosschleife 
+   
+   IN: val - Wert der durch "calcHash" berechnet wurde
+       htsize - Maximal moegliche Groesse
+   
+   OUT: return - Doppelhash Wert
+*/</FONT>
+unsigned int <A HREF="../refered/calcDoppelHash.htm">calcDoppelHash</A>( unsigned int val, unsigned int htsize ) <A NAME="calcDoppelHash">{</A>
+
+   if ( htsize > 128 ) { <FONT COLOR="#00A000">/* 8bits */</FONT>
+        return 128 - ( val % 128 );
+   }
+   
+   if ( htsize > 64 ) { <FONT COLOR="#00A000">/* 7bits */</FONT>
+        return 64 - ( val % 64 );
+   }
+   
+   if ( htsize > 32 ) { <FONT COLOR="#00A000">/* 6bits */</FONT>
+        return 32 - ( val % 32 );
+   }
+   
+   if ( htsize > 16 ) { <FONT COLOR="#00A000">/* 5bits */</FONT>
+        return 16 - ( val % 16 );
+   }
+   
+   if ( htsize > 8 ) { <FONT COLOR="#00A000">/* 4bits */</FONT>
+        return 8 - ( val % 8 );
+   }
+   
+   if ( htsize > 4 ) { <FONT COLOR="#00A000">/* 3bits */</FONT>
+        return 4 - ( val % 4 );
+   }
+   
+   <FONT COLOR="#00A000">/* (MINHTBLSIZE == 5)  ---> wird niemals erreicht */</FONT>
+   if ( htsize > 2 ) { <FONT COLOR="#00A000">/* 2bits */</FONT>
+        return 2 - ( val % 2 );
+   }
+   
+   if ( htsize > 1 ) { <FONT COLOR="#00A000">/* 1bit */</FONT>
+        return 1 - ( val % 1 );
+   }
+   
+   if ( htsize == 1 ) {<FONT COLOR="#00A000">/* hmmm */</FONT>
+        return 1;
+   }
+   
+   return 0;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Berechnet einen Hashwert aus dem String auf den "str" zeigt.
+  Maximal Hashwert: htbl->size
+  
+  IN: str - Zeiger auf String, der zur Berechnung benutzt wird
+      htbl - 
+  
+  OUT: return - Hashwert
+*/</FONT>
+unsigned int <A HREF="../refered/calcHash.htm">calcHash</A>( char *str, HashTbl *htbl ) <A NAME="calcHash">{</A>
+    unsigned int i = 0, len;
+    register unsigned int h;
+        
+    assert( (str != NULL) && (htbl != NULL) );
+    
+    len = strlen(str);
+    
+    h = ((unsigned char)str[i++]);
+    
+    while ( i &lt; len ) {
+            h = (( ( h * 256 ) + 
+                   ((unsigned char)str[i++]) ) % htbl->size);
+    }
+    
+    return h; <FONT COLOR="#00A000">/* Hashwert */</FONT>
+}
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Initialisierung einer Hashtabellen Struktur.
+  
+  Besonderheit: 
+  Jede! HashTbl Variable ist ueber iniHTBL(...) zu initialiseren
+  und die Rueckgabe ist auszuwerten. Alle weiteren xxxHTBL oder
+  xxxWHTBL Funktionen testen die Pointer nur noch mit assert(...) ab.
+  
+  IN: htbl - Hashtabelle die Initialisert wird
+  
+  OUT: return - true(0)|false(-1)
+       htbl - Initialisierte Hashtabelle
+*/</FONT>
+int <A HREF="../refered/iniHTBL.htm">iniHTBL</A>( HashTbl *htbl ) <A NAME="iniHTBL">{</A>
+
+    if ( htbl == NULL ) {
+         return (-1);
+    }
+         
+    htbl->size = 0;
+    htbl->used = 0;
+    htbl->tbl = NULL;
+    htbl->files = 0;
+    htbl->fnames = NULL;
+    
+    return 0;
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Loescht eine FirstNode Struktur samt aller Inhalte.
+  
+  IN: fnode - FirstNode die geloescht werden soll
+  
+  OUT: fnode - Mit NULL Initialiseirt
+*/</FONT>
+void <A HREF="../refered/clearFirstNode.htm">clearFirstNode</A>( FirstNode *fnode ) <A NAME="clearFirstNode">{</A>
+    Node *node, *tmpNode;
+    
+    if ( fnode == NULL ) 
+         return ;
+    
+    <FONT COLOR="#00A000">/* evtl. vorhandenes Wort freigeben */</FONT>
+    if ( fnode->word != NULL ) {
+         fnode->word = <A HREF="../refered/FREE.htm" NAME="FREE2">FREE</A>( fnode->word );
+    }
+    
+    <FONT COLOR="#00A000">/* Alle Knoten freigeben */</FONT>
+    node = fnode->first;
+    while ( node != NULL ) {
+            tmpNode = node->next;
+            <A HREF="../refered/FREE.htm" NAME="FREE3">FREE</A>( node );
+            node = tmpNode;
+    }
+    
+    fnode->first = NULL;
+    fnode->last = NULL;
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Loescht eine Hashtabellen Struktur samt aller Inhalte.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle die geloescht werden soll
+  
+  OUT: htbl - Geloescht und initialisiert
+*/</FONT>
+void <A HREF="../refered/clearHTBL.htm">clearHTBL</A>( HashTbl *htbl ) <A NAME="clearHTBL">{</A>
+
+    if ( htbl == NULL )
+         return ;
+    
+
+    {<FONT COLOR="#00A000">/* Dateinamen loeschen */</FONT>
+     unsigned int i;
+     
+     <FONT COLOR="#00A000">/* Alle Dateinamen loeschen */</FONT>
+     for ( i = 0; i &lt; htbl->files; i++ ) {
+           htbl->fnames[i] = <A HREF="../refered/FREE.htm" NAME="FREE4">FREE</A>( htbl->fnames[i] );
+     }
+     
+     <FONT COLOR="#00A000">/* Dateinamentabelle loeschen */</FONT>
+     htbl->fnames = <A HREF="../refered/FREE.htm" NAME="FREE5">FREE</A>( htbl->fnames );
+     htbl->files = 0;
+    }
+    
+    
+    
+    {<FONT COLOR="#00A000">/* Tabelle loeschen */</FONT>
+     unsigned int i;
+     
+     <FONT COLOR="#00A000">/* Alle Knoten freigeben */</FONT>
+     for ( i = 0; i &lt; htbl->size; i++ ) {
+           <A HREF="../refered/clearFirstNode.htm" NAME="clearFirstNode1">clearFirstNode</A>( &htbl->tbl[i] );
+     }     
+     htbl->used = 0;
+     
+     <FONT COLOR="#00A000">/* Tabelle freigeben */</FONT>
+     htbl->tbl = <A HREF="../refered/FREE.htm" NAME="FREE6">FREE</A>( htbl->tbl );
+     htbl->size = 0;
+    }
+    
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+<FONT COLOR="#00A000">/*
+  Fuegt einer Hashtabellen Struktur einen Dateinamen hinzu.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle die einen neuen Dateinamen aufnehmen soll
+      fname - Dateiname der hinzugefuegt werden soll
+      
+  OUT: htbl - "fname" dem Dateinamenarray zugefuegt
+*/</FONT>
+void <A HREF="../refered/addFNameHTBL.htm">addFNameHTBL</A>( HashTbl *htbl, char *fname ) <A NAME="addFNameHTBL">{</A>
+
+    assert( ( htbl != NULL ) && ( fname != NULL ) );
+    
+    <FONT COLOR="#00A000">/* Dateinamenarray Groesse um eins erhoehen */</FONT>
+    htbl->fnames = <A HREF="../refered/REALLOC.htm" NAME="REALLOC1">REALLOC</A>( htbl->fnames, (htbl->files+1)*sizeof(char *) );
+    
+    <FONT COLOR="#00A000">/* Speicher fuer Datein. Zeichenkette anlegen */</FONT>
+    htbl->fnames[htbl->files] = <A HREF="../refered/MALLOC.htm" NAME="MALLOC2">MALLOC</A>( (size_t)(strlen(fname)+1) );
+    
+    <FONT COLOR="#00A000">/* Dateinamen kopieren */</FONT>
+    memmove( htbl->fnames[htbl->files], fname, strlen(fname) );
+    
+    <FONT COLOR="#00A000">/* Dateinamen Terminieren */</FONT>
+    htbl->fnames[htbl->files][strlen(fname)]='\0';
+    
+    <FONT COLOR="#00A000">/* Anzahl vorhandener Dateinamen um eins erhoehen */</FONT>
+    ++htbl->files;
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Entfernt einen Dateinamen aus der Hashtabelle.
+  
+  Besonderheit:
+  Keine Fehlerauswertung. Uebergebener Index "idx" muss mit
+  getFNameIdxHTBL(...) erstellt worden sein. Fehlerabfrage dort!
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle aus der der Dateiname entfernt werden soll
+      idx - Index des Dateinamens in htbl.fnames[]
+  
+  OUT: htbl - Mit geloeschter Datei an idx
+*/</FONT>
+void <A HREF="../refered/subFNameHTBL.htm">subFNameHTBL</A>( HashTbl *htbl, unsigned int idx ) <A NAME="subFNameHTBL">{</A>
+    unsigned int i;
+
+    assert( htbl != NULL );
+    
+    <FONT COLOR="#00A000">/* Ist Dateiname vorhanden */</FONT>
+    if ( idx >= htbl->files )
+         return ;
+    
+    <FONT COLOR="#00A000">/* Dateinamen loeschen */</FONT>
+    htbl->fnames[idx] = <A HREF="../refered/FREE.htm" NAME="FREE7">FREE</A>( htbl->fnames[idx] );
+    
+    <FONT COLOR="#00A000">/* Rest umkopieren um Luecke zu schliessen */</FONT>
+    for ( i = idx; i &lt; (htbl->files-1); i++ ) {
+          htbl->fnames[i] = htbl->fnames[i+1];
+    }
+    
+    <FONT COLOR="#00A000">/* Anzahl vorhandener Dateinamen um eins verkleinern */</FONT>
+    --htbl->files;
+    
+    <FONT COLOR="#00A000">/* Dateinamenarray auf neue Groesse setzen, also (size-1) */</FONT>
+    htbl->fnames = <A HREF="../refered/REALLOC.htm" NAME="REALLOC2">REALLOC</A>( htbl->fnames, (htbl->files)*sizeof(char *) );
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Sucht den Index des Dateinamens "fname" in htbl.fnames[] und gibt
+  ihn ueber "fidx" zurueck.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle
+      fname - Dateiname der gesucht werden soll
+      fidx - Speicher zum ablegen des Indexes
+      
+  OUT: return - true(0)|false(-1)
+       fidx - Index des Dateinamens wenn gefunden, sonst undef
+*/</FONT>
+int <A HREF="../refered/getFNameIdxHTBL.htm">getFNameIdxHTBL</A>( HashTbl *htbl, char *fname, unsigned int *fidx ) <A NAME="getFNameIdxHTBL">{</A>
+    unsigned int i;
+
+    assert( (htbl != NULL) && (fidx != NULL) );
+    
+    <FONT COLOR="#00A000">/* "fname" mit allen vorhandenen Dateinamen vergleichen */</FONT>
+    for ( i = 0; i &lt; htbl->files; i++ ) {
+          if ( strcmp( htbl->fnames[i], fname ) == 0 ) {
+               *fidx = i;
+               return 0;
+          }
+    }
+    
+    return (-1);
+}
+
+
+<FONT COLOR="#00A000">/*
+  Kopiert! alle Dateinamen aus "srchtbl" nach "dsthtbl".
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: srchtbl - Quell Hashtabelle
+      dsthtbl - Ziel Hashtabelle
+      
+  OUT: dsthtbl - Hashtabelle mit den Dateinamen aus "srchtbl"
+*/</FONT>
+void <A HREF="../refered/copyFNamesHTBL.htm">copyFNamesHTBL</A>( HashTbl *dsthtbl, HashTbl *srchtbl ) <A NAME="copyFNamesHTBL">{</A>
+    unsigned int i;
+    
+    assert( ( dsthtbl != NULL ) && ( srchtbl != NULL ) );
+         
+    <FONT COLOR="#00A000">/* Alle Dateinamen von "srchtbl" nach "dsthtbl" Kopieren */</FONT>
+    for ( i = 0; i &lt; srchtbl->files; i++ ) {
+          <A HREF="../refered/addFNameHTBL.htm" NAME="addFNameHTBL1">addFNameHTBL</A>( dsthtbl, srchtbl->fnames[i] );
+    }
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Druckt die Dateinamenliste au stdout aus.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL
+  
+  IN: htbl - Hashtabelle dessen Dateinamen gedruckt werden sollen
+  
+  OUT:
+*/</FONT>
+void <A HREF="../refered/printFNamesHTBL.htm">printFNamesHTBL</A>( HashTbl *htbl ) <A NAME="printFNamesHTBL">{</A>
+     unsigned int i;
+     
+     assert( htbl != NULL );
+     
+     <FONT COLOR="#00A000">/* Alle vorhandenen Dateinamen auf stdout ausgeben */</FONT>
+     for ( i = 0; i &lt; htbl->files; i++ ) {
+           printf( "File[%d]: %s\n", i, htbl->fnames[i] );
+     }
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Setzt die finale Groesse einer WHTBL
+  
+  Besonderheit:
+  NICHT auf eine HTBL anwendbar! Nur WHTBL.
+  
+  IN: htbl - Hashtabelle die bearbeitet werden soll
+  
+  OUT: htbl - Verkleinerte Hashtabelle
+*/</FONT>
+void <A HREF="../refered/finalizeSizeWHTBL.htm">finalizeSizeWHTBL</A>( HashTbl *htbl ) <A NAME="finalizeSizeWHTBL">{</A>
+
+   assert( htbl != NULL );
+    
+   <FONT COLOR="#00A000">/* Neue groesse anhand der benutzten plaetze setzen */</FONT>
+   htbl->tbl = <A HREF="../refered/REALLOC.htm" NAME="REALLOC3">REALLOC</A>( htbl->tbl, (size_t)(sizeof(FirstNode)*htbl->used) );
+    
+   <FONT COLOR="#00A000">/* "size" Wert nun "used" Wert */</FONT>
+   htbl->size = htbl->used;
+    
+   return ;
+}
+
+
+<FONT COLOR="#00A000">/* 
+  Vergroessert eine Hashtabelle, damit sie mehr Woerter aufnehmen kann.
+  
+  Besonderheit:
+  NICHT auf eine HTBL anwendbar, Wortliste->Hashtabelle ueber buildHTBL. 
+  Nur WHTBL!
+  
+  IN: htbl - Hashtabelle deren Groesse veraendert werden soll
+  
+  OUT: htbl - Vergroesserte Hashtabelle
+*/</FONT>
+void <A HREF="../refered/resizeHTBL.htm">resizeHTBL</A>( HashTbl *htbl ) <A NAME="resizeHTBL">{</A>
+
+    assert( htbl != NULL );
+    
+    <FONT COLOR="#00A000">/* Hashtabelle vergroessern */</FONT>
+    htbl->tbl = <A HREF="../refered/REALLOC.htm" NAME="REALLOC4">REALLOC</A>( htbl->tbl, (size_t)(sizeof(FirstNode)*
+                                    (htbl->size+AUTO_RESIZE_SIZE)) );
+    <FONT COLOR="#00A000">/* Neue groesse eintragen */</FONT>
+    htbl->size += AUTO_RESIZE_SIZE;
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Setzt die Groesse einer Hashtabelle und initialisiert diese mit
+  NULL Werten.
+  
+  Besonderheit:
+  Nur auf leere oder neue Hashtabellen anwenden! Kann man
+  aber auch zum anlegen einer Worttabelle benutzen.
+  
+  IN: htbl - Hashtabelle deren Groesse geaendert werden soll
+      size - neue Groesse der Hashtabelle
+      
+  OUT: htbl - Auf "size" groesse gesetzte, initialis. Hashtabelle 
+*/</FONT>
+void <A HREF="../refered/setSizeHTBL.htm">setSizeHTBL</A>( HashTbl *htbl, unsigned int size ) <A NAME="setSizeHTBL">{</A>
+    unsigned int i;
+    
+    assert( htbl != NULL );
+    
+    <FONT COLOR="#00A000">/* Setzt die groesse einer Hashtabelle */</FONT>
+    htbl->tbl = <A HREF="../refered/REALLOC.htm" NAME="REALLOC5">REALLOC</A>( htbl->tbl, (size_t)(sizeof(FirstNode)*size) );
+    htbl->size = size;
+    
+    <FONT COLOR="#00A000">/* Alle FirstNode(s) initialiseren */</FONT>
+    for ( i = 0; i &lt; size; i++ ) {
+          htbl->tbl[i].first = NULL;
+          htbl->tbl[i].last = NULL;
+          htbl->tbl[i].word = NULL;  
+    }
+    
+    return ;
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Erstellt einen neuen Speicherbereich des Datentyps "Node" und gibt
+  diesen zurueck. Der "next" Zeiger wird mit einer NULLreferenz 
+  initialisiert.
+  
+  IN:
+  
+  OUT: return - Zeiger auf Speicherbereich der Groesse / des Typs  Node
+*/</FONT>
+Node * <A HREF="../refered/newNode.htm">newNode</A>(void) <A NAME="newNode">{</A>
+       Node *node = <A HREF="../refered/MALLOC.htm" NAME="MALLOC3">MALLOC</A>( sizeof(Node) );
+       node->next = NULL;
+       return node;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Haengt ein neues Wort an eine WHTBL an.
+  
+  Besonderheit:
+  NICHT auf eine HTBL anwendbar!    
+  
+  IN: htbl - WHTBL an die das Wort angehaengt werden soll
+      word - Wort das hinzugefuegt werden soll
+      fidx - Index im Dateinamenarray fuer dieses Wort
+      col - Spalte in der das Wort steht
+      row - Zeile in der das Wort steht
+  
+  OUT: htbl - WHTBL an die das Wort angehaengt wurde
+*/</FONT>
+void <A HREF="../refered/addWordWHTBL.htm">addWordWHTBL</A>( HashTbl *htbl, char *word, unsigned int fidx, 
+                 unsigned int col, unsigned int row ) <A NAME="addWordWHTBL">{</A>
+                 
+    assert ( (htbl != NULL) && (word != NULL) && (fidx &lt; htbl->files) );
+    
+    if ( htbl->used == htbl->size ) {
+         <A HREF="../refered/resizeHTBL.htm" NAME="resizeHTBL1">resizeHTBL</A>( htbl );
+    }
+    
+    <FONT COLOR="#00A000">/* Speicher fuer eine Node anlegen */</FONT>
+    htbl->tbl[htbl->used].first = <A HREF="../refered/newNode.htm" NAME="newNode1">newNode</A>();
+    
+    <FONT COLOR="#00A000">/* Alle Node Werte einsetzen */</FONT>
+    htbl->tbl[htbl->used].first->elem.fidx = fidx;
+    htbl->tbl[htbl->used].first->elem.row = row;
+    htbl->tbl[htbl->used].first->elem.col = col;
+    
+    <FONT COLOR="#00A000">/* Speicher fuer das Wort der FirstNode anlegen */</FONT>
+    htbl->tbl[htbl->used].word = <A HREF="../refered/MALLOC.htm" NAME="MALLOC4">MALLOC</A>( (size_t)(strlen(word)+1) );
+    
+    <FONT COLOR="#00A000">/* Wort kopieren und Zeichenkette Terminieren */</FONT>
+    memmove( htbl->tbl[htbl->used].word, word, strlen(word) );
+    htbl->tbl[htbl->used].word[strlen(word)]='\0';    
+    
+    <FONT COLOR="#00A000">/* .last Pointer korrekt setzen */</FONT>
+    htbl->tbl[htbl->used].last = htbl->tbl[htbl->used].first;
+    
+    <FONT COLOR="#00A000">/* Nun ein Platz mehr benutzt */</FONT>
+    ++htbl->used;
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Setzt ein Wort an eine bestimmbare Stelle in der Hashtabelle.
+  
+  
+  Besonderheit:
+  Es wird mit einer bestehenden FirstNode Struktur gearbeitet.
+  In "fnode" wird der Ursprung auf NULL gesetzt.
+  Ist auf WHTBL anwendbar.
+  
+  Anmerkung:
+  if-Zweig -> Anstatt der FirstNode Inhalte können auch die FirstNdes(s)
+  der Tabellen ausgetauscht werden.
+    
+  
+  IN: htbl - Hashtabelle in der das Wort gesetzt werden soll
+      fnode - FirstNode Struktur die eingesetzt werden soll
+      idx - Position in der Hashtabelle an die das Wort gesetzt werden soll
+  
+  OUT: htbl Hashtabelle an die an "idx" "fnode" angehaengt wurde
+*/</FONT>
+void <A HREF="../refered/setWordHTBL.htm">setWordHTBL</A>( HashTbl *htbl, FirstNode *fnode, unsigned int idx ) <A NAME="setWordHTBL">{</A>
+
+    assert( ( htbl != NULL ) && ( fnode != NULL ) && (idx &lt; htbl->size) );
+         
+    <FONT COLOR="#00A000">/* Ist die FirstNode noch leer */</FONT>
+    if ( htbl->tbl[idx].first == NULL ) {
+    
+         <FONT COLOR="#00A000">/* Zeiger in FirstNode umkopieren und die Ursprungszeiger 
+            auf NULL setzen. */</FONT>
+            
+         htbl->tbl[idx].first = fnode->first;
+         htbl->tbl[idx].last = fnode->last;
+         fnode->first = NULL;         
+         fnode->last = NULL;
+        <FONT COLOR="#00A000">/* htbl->tbl[idx].last = htbl->tbl[idx].first;*/</FONT>
+                  
+         htbl->tbl[idx].word = fnode->word;
+         fnode->word = NULL;
+                           
+         ++htbl->used; <FONT COLOR="#00A000">/* Ein Eintrag ist dazugekommen */</FONT>
+
+    } else {
+         
+         <FONT COLOR="#00A000">/* Es sind schon Knoten in FirstNode, also hintenanhaengen */</FONT>
+         htbl->tbl[idx].last->next = fnode->first;
+         htbl->tbl[idx].last = fnode->last;
+         <FONT COLOR="#00A000">/*htbl->tbl[idx].last = fnode->first;*/</FONT>
+         fnode->first = NULL;
+         fnode->last = NULL;
+         
+    }
+    
+    return ;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Bestimmt die Position eines Wortes in der Hashtabelle.
+  
+  Besonderheit:
+  Funktioniert nur mit HTBL.
+  
+  IN: htbl - Hashtabelle in der die Wortposition bestimmt werden soll
+      word - Suchwort
+      idx - Position des Wortes in der Hashtabelle
+      
+  OUT: return - fehler(-1)|true(1)|false(0)       
+*/</FONT>
+int <A HREF="../refered/getWordIdxHTBL.htm">getWordIdxHTBL</A>( HashTbl *htbl, char *word, unsigned int *idx ) <A NAME="getWordIdxHTBL">{</A>
+    unsigned int hash, dhash, rehash=0;
+
+    assert( (word != NULL) && (idx != NULL) && (htbl != NULL) );
+
+    <FONT COLOR="#00A000">/* Hashwert fuer "word" berechnen */</FONT>
+    hash = <A HREF="../refered/calcHash.htm" NAME="calcHash1">calcHash</A>( word, htbl );
+    
+    <FONT COLOR="#00A000">/* Doppelhashwert berechnen */</FONT>
+    dhash = <A HREF="../refered/calcDoppelHash.htm" NAME="calcDoppelHash1">calcDoppelHash</A>( hash, htbl->size );
+
+    <FONT COLOR="#00A000">/* Solange kein leerer Platz gefunden wurde */</FONT>
+    while ( htbl->tbl[hash].first != NULL ) {
+    
+            ++rehash;
+            <FONT COLOR="#00A000">/* Endlosschleife im Fehlerfall vermeiden */</FONT>
+            if ( rehash > (3*htbl->size) ) 
+                 return (-1);
+            
+            <FONT COLOR="#00A000">/* Ist in FirstNode das gesuchte Wort */</FONT>
+            if ( strcmp( word, htbl->tbl[hash].word ) == 0 ) {
+                 *idx = hash;
+                 return 1;
+            }
+            
+            <FONT COLOR="#00A000">/* ReHash */</FONT>
+            hash = ((hash+dhash) % htbl->size);
+            
+    }
+    
+    return 0;
+}
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Zerlegt eine Zeichenkette in Woerter.
+  
+  Besonderheit:
+  Funktioniert nur mit WHTBL.
+  
+  IN: whtbl - WHTBL, als Worttabelle(liste) genutzt
+      data - Zu zerlegende Zeichenkette
+      dataLen - Laenge der Zeichenkette
+      aktFileName - Dateiname zu der die Zeichenkette gehoert
+      austab - Ausschlusstabelle
+  
+  OUT: return - fehler(-1)|fehler(-2)|ok(0)
+       whtbl - WHTBL in die die gefundenen Woerter eingetragen wurden
+*/</FONT>
+int <A HREF="../refered/string2WHTBL.htm">string2WHTBL</A>( HashTbl *whtbl, char *data, unsigned int dataLen,
+                    char *aktFileName, Austab *austab ) <A NAME="string2WHTBL">{</A>
+    unsigned int row=1, col=0, pos=0, posAhead=0, fidx;
+    char tmpChar ;
+
+    <FONT COLOR="#00A000">/*  */</FONT>
+    if ( (data==NULL) || (whtbl==NULL) || (aktFileName==NULL) || 
+         (austab==NULL) )
+          return (-1);
+    
+   
+    <FONT COLOR="#00A000">/* Dateinamen aus dem die Zeichenkette aus "data" stammt,
+       der Dateinamentabelle zufuegen */</FONT>
+    <A HREF="../refered/addFNameHTBL.htm" NAME="addFNameHTBL2">addFNameHTBL</A>( whtbl, aktFileName );
+    <FONT COLOR="#00A000">/* Ist der Dateiname auch sicher eingetragen worden und an welcher 
+       Stelle */</FONT>
+    if ( <A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL1">getFNameIdxHTBL</A>( whtbl, aktFileName, &fidx ) &lt; 0 )
+         return (-2);
+    
+    
+    <FONT COLOR="#00A000">/* Bis alle Zeichen aus "data" verarbeitet sind */</FONT>
+    for ( pos = 0; pos &lt; dataLen;  ) {
+
+      switch (data[pos]) {
+      
+        <FONT COLOR="#00A000">/* Neue Zeile */</FONT>
+        case '\n':             
+             ++row; <FONT COLOR="#00A000">/* Zeilenmarker um eins erhoehen */</FONT>
+             col=0; <FONT COLOR="#00A000">/* Spaltenmarker reset */</FONT>
+             pos++; <FONT COLOR="#00A000">/* Laufende Position in "data" um eins erhoehen, 
+                       weil \n verarbeitet wurde */</FONT>
+             continue; <FONT COLOR="#00A000">/* Am Ende der Zeichenkette? */</FONT>
+        break;
+        
+        default:
+             <FONT COLOR="#00A000">/* Vorausschau Variable initialisieren */</FONT>
+             posAhead = pos;
+             
+             <FONT COLOR="#00A000">/* austab->tbl[x] ist entweder true oder false fuer aktuelles
+                Zeichen. true = Trennzeichen */</FONT>
+
+             while ( ((! austab->tbl[ 
+                          <FONT COLOR="#00A000">/* Vorsicht Falle, 128-255 negativ */</FONT>
+                         ( (int) ((unsigned char)data[posAhead]) ) 
+                                    ]) && 
+                     (posAhead &lt; dataLen)) ) {
+                       posAhead++;
+             }
+             
+             <FONT COLOR="#00A000">/* Ist gefundenes Wort min. 3 Zeichen lang?
+                Naechstes Zeichen in Zeichenkette merken.
+                ( Am Ende ist ein \0 Zeichen, also sicher fuer data[last] )
+                In Zeichenkette gefundenes Wort terminieren.
+                Wort der Wortliste zufuegen.
+                Altes Zeichen in Zeichenkette wiederherstellen.
+                Positionsvariablen aktualisieren.
+                Am Ende der Zeichenkette?
+             */</FONT>
+             if ( (posAhead - pos) > 2 ) {
+                   tmpChar = data[posAhead]; 
+                   data[posAhead] = '\0';
+                   <A HREF="../refered/addWordWHTBL.htm" NAME="addWordWHTBL1">addWordWHTBL</A>( whtbl, &data[pos], fidx, col, row );
+                   data[posAhead] = tmpChar;
+                   col += posAhead-pos;
+                   pos = posAhead;
+                   continue;             
+             }<FONT COLOR="#00A000">/*if*/</FONT>
+             
+        break;    
+    
+      }<FONT COLOR="#00A000">/*switch*/</FONT>
+      
+      <FONT COLOR="#00A000">/* Ist das Wort kleiner 3 Zeichen gewesen, wird hier weitergemacht.
+         Eigentlich +2 da ja aktuelles und naechstes schon ungueltig sind.*/</FONT>
+      pos++; col++;
+     
+    }<FONT COLOR="#00A000">/*for (pos) */</FONT>
+    
+    <FONT COLOR="#00A000">/* Wortlistengroesse auf belegte Plaetze setzen. */</FONT>
+    <A HREF="../refered/finalizeSizeWHTBL.htm" NAME="finalizeSizeWHTBL1">finalizeSizeWHTBL</A>( whtbl );
+    
+    return 0;
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Codeauslagerung aus buildHTBL
+  
+  Berechnet neue Positionen fuer die Eintraege aus srchtbl und
+  haengt die Referenzen entsprechend um.
+  Ist noetig da die dsthtbl eine kleinere groesse hat.
+  
+  IN: srchtbl - Quell Hashtabelle
+      dsthtbl - Ziel Hashtabelle
+  
+  OUT: dsthtbl - Neu aufgebaute Hashtabelle
+*/</FONT>
+void <A HREF="../refered/makeSmallHTBL.htm">makeSmallHTBL</A>( HashTbl *srchtbl, HashTbl *dsthtbl ) <A NAME="makeSmallHTBL">{</A>
+     unsigned int i, hash, dhash, rehash=0;
+   
+     assert( (srchtbl != NULL) && (dsthtbl != NULL) );
+   
+     <FONT COLOR="#00A000">/* Dateinamen umkopieren */</FONT>
+     <A HREF="../refered/copyFNamesHTBL.htm" NAME="copyFNamesHTBL1">copyFNamesHTBL</A>( dsthtbl, srchtbl );
+     
+     <FONT COLOR="#00A000">/* Alle Plaetze in Tabelle durchgehen */</FONT>
+     for ( i = 0; i &lt; srchtbl->size; i++ ) {
+     
+           <FONT COLOR="#00A000">/* Leere Node -> nichts zu tun */</FONT>
+           if ( srchtbl->tbl[i].first == NULL )
+                continue;
+
+           <FONT COLOR="#00A000">/* Hashwert fuer Zeichenkette berechnen */</FONT>
+           hash = <A HREF="../refered/calcHash.htm" NAME="calcHash2">calcHash</A>( srchtbl->tbl[i].word, dsthtbl );
+           
+           <FONT COLOR="#00A000">/* Ist die Position frei? */</FONT>
+           if ( dsthtbl->tbl[hash].first != NULL ) {
+                ++rehash;
+                
+                <FONT COLOR="#00A000">/* Wenn nicht frei, dann Rehash bis freie Position
+                   gefunden wurde. */</FONT>
+                dhash = <A HREF="../refered/calcDoppelHash.htm" NAME="calcDoppelHash2">calcDoppelHash</A>( hash, dsthtbl->size );
+                hash = ((hash+dhash) % dsthtbl->size);                
+                               
+                while ( dsthtbl->tbl[hash].first != NULL ) {
+                        hash = ((hash+dhash) % dsthtbl->size);                        
+                        ++rehash;
+                }
+                
+           }
+           
+           <FONT COLOR="#00A000">/* Daten umhaengen und alte Pointer auf NULL setzen */</FONT>
+           dsthtbl->tbl[hash].first = srchtbl->tbl[i].first;
+           dsthtbl->tbl[hash].last = srchtbl->tbl[i].last;
+           dsthtbl->tbl[hash].word = srchtbl->tbl[i].word;
+           srchtbl->tbl[i].first = NULL;
+           srchtbl->tbl[i].last  = NULL;
+           srchtbl->tbl[i].word = NULL;
+           
+     }
+     
+}
+
+
+<FONT COLOR="#00A000">/*
+  Erstellt aus einer WHTBL(Hashtabelle als Wortliste) eine 
+  HTBL(Hashtabelle).
+  
+  IN: srchtbl - Hashtabelle als Wortliste.
+      htbl - Ziel in das die Hashtabelle aufgebaut werden soll.
+      
+  OUT: return - fehler(-1)|ok(0)
+       htbl - Neu aufgebaute Hashtabelle
+*/</FONT>
+int <A HREF="../refered/buildHTBL.htm">buildHTBL</A>( HashTbl *srchtbl ) <A NAME="buildHTBL">{</A>
+    unsigned int i, hash, dhash, found, cnt=0;
+    HashTbl ihtbl;
+    
+    if ( srchtbl == NULL )
+          return (-1);
+    
+    <FONT COLOR="#00A000">/* Temporaere Hashtabelle initialisieren */</FONT>
+    (void)<A HREF="../refered/iniHTBL.htm" NAME="iniHTBL1">iniHTBL</A>( &ihtbl );<FONT COLOR="#00A000">/* (ihtbl != NULL)  ...locale Variable */</FONT>
+    
+    <FONT COLOR="#00A000">/* Groesse setzen, hier wird davon ausgegangen, das
+       alle Woerter unterschiedlich sind. Spaeter wird die 
+       Anzahl doppelt vorhandener Woerter gezaehlt und dann eine
+       verkleinerte Hashtabelle aufgebaut. */</FONT>
+    <A HREF="../refered/setSizeHTBL.htm" NAME="setSizeHTBL1">setSizeHTBL</A>( &ihtbl, <A HREF="../refered/calcNextPrim.htm" NAME="calcNextPrim1">calcNextPrim</A>( srchtbl->used ));
+    
+    
+    <FONT COLOR="#00A000">/* Dateinamen umkopieren */</FONT>
+    <A HREF="../refered/copyFNamesHTBL.htm" NAME="copyFNamesHTBL2">copyFNamesHTBL</A>( &ihtbl, srchtbl );    
+    
+    <FONT COLOR="#00A000">/* Alle Woerter aus Wortliste verarbeiten.
+       Wortliste: .used == .size */</FONT>
+    for ( i = 0; i &lt; srchtbl->used; i++ ) {
+          
+          <FONT COLOR="#00A000">/* Hashwert berechnen */</FONT>
+          hash = <A HREF="../refered/calcHash.htm" NAME="calcHash3">calcHash</A>( srchtbl->tbl[i].word, &ihtbl );
+          <FONT COLOR="#00A000">/* evtl. benoetigter Doppelhashwert berechnen */</FONT>
+          dhash = <A HREF="../refered/calcDoppelHash.htm" NAME="calcDoppelHash3">calcDoppelHash</A>( hash, ihtbl.size );
+          
+          <FONT COLOR="#00A000">/* Noch kein Platz gefunden? */</FONT>
+          found = 0;          
+          while ( ! found ) {          
+                  
+                  <FONT COLOR="#00A000">/* Leere Tabellenposition, dann hier eintragen */</FONT>
+                  if ( ihtbl.tbl[hash].word == NULL ) {
+                  
+                       <FONT COLOR="#00A000">/* neu */</FONT>
+                       <A HREF="../refered/setWordHTBL.htm" NAME="setWordHTBL1">setWordHTBL</A>( &ihtbl, &srchtbl->tbl[i], hash );
+                       found = 1;
+                       ++cnt; <FONT COLOR="#00A000">/* Unterschiedliche Woerter */</FONT>
+                       
+                  } else {
+                  
+                       <FONT COLOR="#00A000">/* Steht hier das selbe Wort, dann anhaengen. */</FONT>
+                       if ( strcmp( ihtbl.tbl[hash].word, 
+                                    srchtbl->tbl[i].word ) == 0 ) {
+                       
+                            <FONT COLOR="#00A000">/* gleiche Woerter */</FONT>
+                            <A HREF="../refered/setWordHTBL.htm" NAME="setWordHTBL2">setWordHTBL</A>( &ihtbl, &srchtbl->tbl[i], hash );
+                            found = 1;
+                            
+                       }
+                       
+                  }<FONT COLOR="#00A000">/*if-else*/</FONT>
+                  
+                  <FONT COLOR="#00A000">/* Nichts passendes gefunden, Rehash und nochmal 
+                     versuchen */</FONT>
+                  hash = (hash+dhash)%ihtbl.size;
+                  
+          }<FONT COLOR="#00A000">/*while*/</FONT>                    
+    }<FONT COLOR="#00A000">/*for*/</FONT>
+    
+     <FONT COLOR="#00A000">/* Alte Wortliste loeschen */</FONT>
+     <A HREF="../refered/clearHTBL.htm" NAME="clearHTBL1">clearHTBL</A>(srchtbl);
+     <FONT COLOR="#00A000">/* Neu initialisieren */</FONT>
+     (void)<A HREF="../refered/iniHTBL.htm" NAME="iniHTBL2">iniHTBL</A>(srchtbl);
+     <FONT COLOR="#00A000">/* Endgueltige groesse setzen. */</FONT>
+     <A HREF="../refered/setSizeHTBL.htm" NAME="setSizeHTBL2">setSizeHTBL</A>( srchtbl, <A HREF="../refered/calcNextPrim.htm" NAME="calcNextPrim2">calcNextPrim</A>( cnt + ((cnt/100)*10) ) );
+     <FONT COLOR="#00A000">/* Aufbau der endgueltigen Hashtabelle */</FONT>
+     <A HREF="../refered/makeSmallHTBL.htm" NAME="makeSmallHTBL1">makeSmallHTBL</A>( &ihtbl, srchtbl );
+     <FONT COLOR="#00A000">/**/</FONT>
+     srchtbl->used = cnt;
+     <FONT COLOR="#00A000">/* Temporaere Tabelle loeschen */</FONT>
+     <A HREF="../refered/clearHTBL.htm" NAME="clearHTBL2">clearHTBL</A>( &ihtbl );
+
+    return 0;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Entfernt aus einer Hashtabelle alle Referenzen auf Woerter aus
+  Datei "fname".
+
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle aus der die Referenzen entfernt werden sollen
+      fname - Dateiname anhand dessen die zu entfernenden Woerter erkannt 
+              werden
+  
+  OUT: return - fehler(-1)|ok(0)
+       htbl - HTBL aus der alle Refere. auf "fname" entfernt wurden
+*/</FONT>
+int <A HREF="../refered/subFNameRefHTBL.htm">subFNameRefHTBL</A>( HashTbl *htbl, char *fname ) <A NAME="subFNameRefHTBL">{</A>
+    unsigned int i;
+    unsigned int  fidx, tfidx;
+    HashTbl ihtbl;
+    Node *node;
+    
+    if ( (htbl == NULL) || (fname == NULL) ) 
+         return (-1);
+    
+    <FONT COLOR="#00A000">/* Index ,der zu entfernenden Datei, im Dateinamenarray holen */</FONT>
+    if ( <A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL2">getFNameIdxHTBL</A>( htbl, fname, &fidx ) &lt; 0 )
+         return 0;
+    
+    <FONT COLOR="#00A000">/* Ist nur noch eine Dateireferenz vorhanden, ganze Tabelle loeschen. */</FONT>
+    if ( htbl->files == 1 ) {
+         <A HREF="../refered/clearHTBL.htm" NAME="clearHTBL3">clearHTBL</A>( htbl );
+         return 0;
+    }
+    
+    <FONT COLOR="#00A000">/* Dateinamen aus Dateinamenliste loschen */</FONT>
+    <A HREF="../refered/subFNameHTBL.htm" NAME="subFNameHTBL1">subFNameHTBL</A>( htbl, fidx );
+
+
+    <FONT COLOR="#00A000">/* Temporaere Tabelle anlegen */</FONT>
+    (void)<A HREF="../refered/iniHTBL.htm" NAME="iniHTBL3">iniHTBL</A>( &ihtbl );
+    <A HREF="../refered/copyFNamesHTBL.htm" NAME="copyFNamesHTBL3">copyFNamesHTBL</A>( &ihtbl, htbl );
+    
+
+    <FONT COLOR="#00A000">/* Alle Plaetze in Tabelle verarbeiten */</FONT>
+    for ( i = 0; i &lt; htbl->size; i++ ) {
+          
+          <FONT COLOR="#00A000">/* Kurze Schreibweise... */</FONT>
+          node = htbl->tbl[i].first;
+          
+          <FONT COLOR="#00A000">/* Nichts zu tun in dieser FirstNode */</FONT>
+          if ( node == NULL )
+               continue;
+                  
+          
+          <FONT COLOR="#00A000">/* Liste verarbeiten */</FONT>
+          while ( node != NULL ) {
+          
+                  <FONT COLOR="#00A000">/* Ist die Node eine die entfernt werden soll?
+                     Wenn gleich wird die Node einfach uebergangen. */</FONT>
+                  if ( node->elem.fidx != fidx ) {
+               
+                     <FONT COLOR="#00A000">/* Neuen Dateinamenindex erstellen */</FONT>
+                     if ( node->elem.fidx > fidx )
+                          tfidx = node->elem.fidx-1;
+                     else
+                          tfidx = node->elem.fidx;
+                     
+    
+                     <FONT COLOR="#00A000">/* Wort der Wortliste zufuegen */</FONT>
+                     <A HREF="../refered/addWordWHTBL.htm" NAME="addWordWHTBL2">addWordWHTBL</A>( &ihtbl, htbl->tbl[i].word, tfidx, 
+                                   node->elem.col, node->elem.row );
+                     
+                  } 
+                  
+                  node = node->next;
+                  
+          }<FONT COLOR="#00A000">/*while*/</FONT>          
+    }<FONT COLOR="#00A000">/*for*/</FONT>
+    
+    
+    <A HREF="../refered/finalizeSizeWHTBL.htm" NAME="finalizeSizeWHTBL2">finalizeSizeWHTBL</A>( &ihtbl );
+    <FONT COLOR="#00A000">/*  Alte Tabele loeschen */</FONT>
+    <A HREF="../refered/clearHTBL.htm" NAME="clearHTBL4">clearHTBL</A>( htbl );
+    (void)<A HREF="../refered/iniHTBL.htm" NAME="iniHTBL4">iniHTBL</A>( htbl );<FONT COLOR="#00A000">/* (htbl != NULL)  muss hier schon lange getestet
+                             sein */</FONT>
+    
+    
+    *htbl = ihtbl;
+    
+    return 0;
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Gibt eine Hashtabelle aud stdout aus.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Auszugebende Hashtabelle
+  
+  OUT:
+*/</FONT>
+void <A HREF="../refered/printHTBL.htm">printHTBL</A>( HashTbl *htbl ) <A NAME="printHTBL">{</A>
+    unsigned int i;
+    Node *node;
+    
+    assert ( htbl != NULL );
+    
+    <FONT COLOR="#00A000">/* Alle Elemente der Tabelle durchgehen */</FONT>
+    for ( i = 0; i &lt; htbl->size; i++ ) {
+    
+          node = htbl->tbl[i].first;
+          
+          while ( node != NULL ) {
+
+                printf("%s:%s:%d:%d\n", 
+                        htbl->tbl[i].word,
+                        htbl->fnames[node->elem.fidx],
+                        node->elem.row,
+                        node->elem.col
+                      );
+                
+                node = node->next;
+          }
+          
+    }
+    
+    fflush(stdout);
+    
+    return ;
+}
+
+
+<FONT COLOR="#00A000">/*
+  Gibt den Inhalt einer FirstNode Struktur aus stdout aus.
+  
+  IN: htbl - Hashtabelle
+      idx - Index der FirstNode in "htbl"
+  
+  OUT:
+*/</FONT>
+void <A HREF="../refered/printFirstNode.htm">printFirstNode</A>( HashTbl *htbl, unsigned int idx ) <A NAME="printFirstNode">{</A>
+    Node *node;
+    
+    assert( (htbl != NULL) && (idx &lt; htbl->size) );
+    
+    node = htbl->tbl[idx].first;
+    
+    while ( node != NULL ) {
+            printf("row: %d, col: %d, file: %s\n", 
+                        node->elem.row,
+                        node->elem.col,
+                        htbl->fnames[node->elem.fidx]                        
+                  );
+            node = node->next;
+    }
+    
+    return ;
+}
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Speichert eine Hashtabelle Zeilenweise in eine Txtdatei.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle die gespeichert werden soll
+      fname - Dateiname der Textdatei
+  
+  OUT: return - fehler(-1)|ok(0)
+*/</FONT>
+int <A HREF="../refered/saveHTBL.htm">saveHTBL</A>( HashTbl *htbl, char *fname ) <A NAME="saveHTBL">{</A>
+    unsigned int i;
+    int ret;
+    FILE *fz;
+    Node *node;
+        
+    assert( htbl != NULL );
+
+    <FONT COLOR="#00A000">/* Datei zur Ausgabe anlegen */</FONT>
+    fz = fopen( fname, "wb" );
+    if ( fz == NULL ) {
+         perror("Save Hashtabelle ");
+         return (-1);
+    }
+    
+    <FONT COLOR="#00A000">/* Alle Elemente verarbeiten */</FONT>
+    for ( i = 0; i &lt; htbl->size; i++ ) {
+          
+          node = htbl->tbl[i].first;
+          
+          while ( node != NULL ) {
+          
+                ret = fprintf( fz, "%s:%s:%d:%d\n",
+                               htbl->tbl[i].word, 
+                               htbl->fnames[node->elem.fidx],
+                               node->elem.row, 
+                               node->elem.col
+                             );
+                
+                <FONT COLOR="#00A000">/* ret&lt;0 Fehler beim schreiben in Datei */</FONT>
+                if ( ret &lt; 0 ) {
+                     perror("Save Hashtabelle ");
+                     fclose(fz);
+                     return (-1);
+                }
+                
+                node = node->next;
+          
+          }<FONT COLOR="#00A000">/*while*/</FONT>  
+    }
+    
+    fclose(fz);
+    
+    return 0;
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Liesst eine von diesem Programm gespeicherte Indexdatei ein
+  und baut eine fertige Hashtabelle auf.
+  
+  Besonderheit:
+  Eine fehlerhafte Indexdatei kann zu undefiniertem Verhalten fuehren.  
+  
+  IN: htbl - Hashtabelle in die die Daten abgelegt werden sollen
+      fname - Dateiname der Textdatei
+  
+  OUT: return - fehler(-1)|ok(0)
+       htbl - Hashtabelle aus Daten aus "fname" aufgebaut
+*/</FONT>
+int <A HREF="../refered/readHTBL.htm">readHTBL</A>( HashTbl *htbl, char *fname ) <A NAME="readHTBL">{</A>
+#define MAXSSCANF MAXBUFINDEXLINE+1 <FONT COLOR="#00A000">/* 1303 + 1 */</FONT>
+
+    FILE *fz;
+    
+    char tbuf[MAXBUFINDEXLINE+2], 
+         tword[MAXWORDLEN+1], 
+         tfname[MAXFNAMELEN+1];    
+         
+    unsigned int  tcol, trow, tfidx;
+    
+    if ( htbl == NULL )
+         return (-1);
+
+    
+    fz = fopen( fname, "rb" );
+    if ( fz == NULL ) {
+         perror("Read Hashtabelle ");
+         return (-1);
+    }
+    
+    <FONT COLOR="#00A000">/* Zeilenweise aus Datei lesen, max. "tbuf" groesse pro Ziele */</FONT>
+    while ( fscanf(fz, "%1303s\n", tbuf) != EOF ) {
+            if (
+                sscanf( tbuf, "%[^:]:%[^:]:%u:%u", 
+                        tword, tfname, &trow, &tcol ) != 4 ) {
+                fclose(fz);
+                return (-1);
+            }
+            
+            <FONT COLOR="#00A000">/* Fals Dateiname noch nicht enthalten, eintragen. */</FONT>
+            if ( <A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL3">getFNameIdxHTBL</A>( htbl, tfname, &tfidx ) &lt; 0 ) {
+                 <A HREF="../refered/addFNameHTBL.htm" NAME="addFNameHTBL3">addFNameHTBL</A>( htbl, tfname );
+            }
+            
+            <FONT COLOR="#00A000">/* Ist der Dateiname eingetragen? 
+               Wenn ja, welche Position? */</FONT>
+            if ( <A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL4">getFNameIdxHTBL</A>( htbl, tfname, &tfidx ) &lt; 0 ) {
+                 <A HREF="../refered/clearHTBL.htm" NAME="clearHTBL5">clearHTBL</A>( htbl );
+                 return (-1);
+            }
+            
+            <FONT COLOR="#00A000">/* Das Wort eintragen */</FONT>
+            <A HREF="../refered/addWordWHTBL.htm" NAME="addWordWHTBL3">addWordWHTBL</A>( htbl, tword, tfidx, tcol, trow );
+    }    
+    
+    fclose(fz);
+    
+    <A HREF="../refered/finalizeSizeWHTBL.htm" NAME="finalizeSizeWHTBL3">finalizeSizeWHTBL</A>( htbl );
+
+    <FONT COLOR="#00A000">/* Hashtabelle aufbauen */</FONT>
+    return <A HREF="../refered/buildHTBL.htm" NAME="buildHTBL1">buildHTBL</A>( htbl );
+
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Liesst eine von diesem Programm gespeicherte Indexdatei ein.
+  
+  IN: whtbl - Hashtabelle, als Wortliste, in die die Daten abgelegt werden
+              sollen
+      fname - Dateiname der Textdatei
+  
+  OUT: return - fehler(-1)|ok(0)
+       whtbl - WHTBL in die alle daten aus "fname" eingetragen wurden
+*/</FONT>
+int <A HREF="../refered/readWHTBL.htm">readWHTBL</A>( HashTbl *whtbl, char *fname ) <A NAME="readWHTBL">{</A>
+    FILE *fz;
+    char tbuf[MAXBUFINDEXLINE+2], 
+         tword[MAXWORDLEN+1], 
+         tfname[MAXFNAMELEN+1];
+         
+    unsigned int tcol, trow, tfidx;
+    
+    if ( whtbl == NULL )
+         return (-1);
+    
+    fz = fopen( fname, "rb" );
+    if ( fz == NULL ) {
+         perror("Read Hashtabelle als Wortliste ");
+         return (-1);
+    }
+    
+    <FONT COLOR="#00A000">/* Zeilenweise aus Datei lesen, max. "tbuf" groesse pro Ziele */</FONT>
+    while ( fscanf(fz, "%1303s\n", tbuf) != EOF ) {
+            if (
+                sscanf( tbuf, "%[^:]:%[^:]:%u:%u", 
+                        tword, tfname, &trow, &tcol ) != 4 ) {
+                fclose(fz);
+                return (-1);
+            }
+            
+            <FONT COLOR="#00A000">/* Fals Dateiname noch nicht enthalten, eintragen. */</FONT>
+            if ( <A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL5">getFNameIdxHTBL</A>( whtbl, tfname, &tfidx ) &lt; 0 ) {
+                 <A HREF="../refered/addFNameHTBL.htm" NAME="addFNameHTBL4">addFNameHTBL</A>( whtbl, tfname );                 
+            }
+            
+            <FONT COLOR="#00A000">/* Ist der Dateiname eingetragen? 
+               Wenn ja, welche Position? */</FONT>
+            if ( <A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL6">getFNameIdxHTBL</A>( whtbl, tfname, &tfidx ) &lt; 0 ) {
+                 <A HREF="../refered/clearHTBL.htm" NAME="clearHTBL6">clearHTBL</A>( whtbl );
+                 return (-1);
+            }
+            
+            <FONT COLOR="#00A000">/* Das Wort eintragen */</FONT>
+            <A HREF="../refered/addWordWHTBL.htm" NAME="addWordWHTBL4">addWordWHTBL</A>( whtbl, tword, tfidx, tcol, trow );
+    }    
+    
+    fclose(fz);
+    
+    <A HREF="../refered/finalizeSizeWHTBL.htm" NAME="finalizeSizeWHTBL4">finalizeSizeWHTBL</A>( whtbl );
+    
+    return 0;
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+<FONT COLOR="#00A000">/*
+  Sucht in einer Hashtabelle nach Woertern, die von stdin gelesen werden.
+  Die/Das Ergebnis wird auf stdout ausgegeben.
+
+  IN: htbl - Hashtabelle in der gesucht werden soll
+  
+  OUT:
+*/</FONT>
+void <A HREF="../refered/searchHTBL.htm">searchHTBL</A>( HashTbl *htbl ) <A NAME="searchHTBL">{</A>
+<FONT COLOR="#00A000">/* MAXWORDLEN + \n + \0 */</FONT>
+#define MAXLINELEN (MAXWORDLEN + 2)
+
+     char line[MAXLINELEN];
+     unsigned int  idx;
+     int ret;
+     
+     assert(htbl != NULL);
+     
+
+     printf("Geben sie ein Suchwort ein:\n");fflush(stdout);
+     
+     <FONT COLOR="#00A000">/* Solange Zeilenweise lesen bis EOF oder Fehler */</FONT>
+                        <FONT COLOR="#00A000">/* n-1 -> \0 */</FONT>
+     while ( fgets( line, MAXLINELEN, stdin ) != NULL ) {
+     
+             <FONT COLOR="#00A000">/* User hat zu viele Zeichen angegeben, wenn vorletztes 
+                Zeichen kein '\n' ist.                
+                Rest wird bei naechstem fgets(...) gelesen!
+                Nicht schoen, aber ein User Fehler. */</FONT>
+             if ( strlen(line) == (MAXLINELEN-1) )
+                  if ( line[strlen(line)-1] != '\n' ) {
+                       printf("Suchwort ist zu lang.\n\n");
+                       continue;
+                  }
+             
+                          
+             line[strlen(line)-1]='\0';<FONT COLOR="#00A000">/* \n loeschen */</FONT>
+             
+             <FONT COLOR="#00A000">/* Index in Hashtabelle berechnen */</FONT>
+             if ( (ret = <A HREF="../refered/getWordIdxHTBL.htm" NAME="getWordIdxHTBL1">getWordIdxHTBL</A>( htbl, line, &idx )) &lt; 0 ) {
+                  printf("Bei der Suche nach \"%s\" ist ein Fehler \
+aufgetreten.\n\n", line);
+                  return ;
+             }
+             
+             
+             if ( ret == 0 ) {
+             
+                  printf("Suche nach \"%s\" war erfolglos\n\n", line); 
+                  
+             } else {
+             
+             <FONT COLOR="#00A000">/* Wenn Wort gefunden, FirstNode Struktur ausgeben */</FONT>
+                  printf("Suche nach \"%s\" war erfolgreich\n", line);                   
+                  <A HREF="../refered/printFirstNode.htm" NAME="printFirstNode1">printFirstNode</A>( htbl, idx );
+                  printf("\n");
+             }
+             
+             fflush(stdout);
+     }<FONT COLOR="#00A000">/*while*/</FONT>
+     
+}
+<FONT COLOR="#00A000">/*------------------------------------------------------------------------*/</FONT>
+
+
+<FONT COLOR="#00A000">/*EOF*/</FONT>
+</PRE></BODY></HTML>

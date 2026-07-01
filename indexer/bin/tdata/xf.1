@@ -1,0 +1,380 @@
+.\" -*- text -*-
+.\"     xf : a interface builder for Tcl/TK
+.\"
+.\"     Sven Delmas
+.\"     sven@cimetrix.com
+.\"
+.TH XF 1 "Wed Mar 10 16:26:17 1993"
+.SH NAME
+.B
+xf \- interactive interface builder for Tcl/TK
+.PP
+
+.SH SYNOPSIS
+.B
+xf [xf options]
+.LP
+\fBxf options:\fP
+.LP
+.IP
+.ad l
+.nh
+[\-cmd\ <arg>]
+[\-testcmd\ <arg>]
+[\-xf\ <pathname>]
+[\-xfadditionals\ <pathname list>]
+[\-xfbind\ <pathname>]
+[\-xfcolors\ <filename>]
+[\-xfconfig\ <filename>]
+[\-xfcursors\ <filename>]
+[\-xfelements\ <pathname>]
+[\-xffonts\ <filename>]
+[\-xfhelp]
+[\-xfhelps\ <pathname list>]
+[\-xficonbar\ <filename>]
+[\-xficons\ <filename>]
+[\-xfignore]
+[\-xfkeysyms\ <filename>]
+[\-xflib\ <pathname>]
+[\-xfmenubar\ <filename>]
+[\-xfmodelcolor]
+[\-xfmodelmono]
+[\-xfpos\ <filename>]
+[\-xfprocs\ <pathname>]
+[\-xfsrc\ <pathname>]
+[\-xfstartup\ <filename>]
+[\-xftemplates\ <pathname list>]
+[\-xftmp\ <pathname>]
+[\-xfversion]
+[file...]
+[application options]
+.ad b
+.hy 1
+.PP
+
+.SH DESCRIPTION
+.PP
+XF allows to interactively build and modify a graphical user
+interface, based upon the Tcl/TK package from John
+Ousterhout. It provides full access to the complete command
+and widget set of Tcl/Tk.
+
+If there occur errors during the work with XF that are
+producing output to stderr, these errors are mirrored to the
+file xferrors in the XF tmp directory. If you can say that
+they are caused by XF or you are not sure, please send me
+thw file so that I can locate the problem.
+
+.SH OPTIONS
+.PP
+The following options can be controlled from the command
+line.
+.\"
+.LP
+\fB\-cmd <arg>\fP
+.IP
+This option allows you to select a different interpreter
+(something else than in the xf script).
+.\"
+.LP
+\fB\-testcmd <arg>\fP
+.IP
+This option allows you to select a different interpreter
+for the testing (something else than in the xf script).
+.\"
+.LP
+\fB\-xf <pathname>\fP
+.IP
+This option sets the xf toplevel directory to the given
+value.
+.\"
+.LP
+\fB\-xfadditionals <pathname list>\fP
+.IP
+This option sets the xf additionals directory to the given
+value. This directory contains widget sources of the widgets
+that are not part of the core Tk distribution, like the
+Hypertext widget. The parameter can be a list of pathnames
+separated by ':'.
+.\"
+.LP
+\fB\-xfbind <filename>\fP
+.IP
+This option sets the xf binding file to the given value.
+This file contains the class bindings of the widgets, and
+procedures that are needed by the bindings.
+.\"
+.LP
+\fB\-xfcolors <filename>\fP
+.IP
+This option sets the xf color file to the given value. This
+file contains the names and values of the known colors.
+.\"
+.LP
+\fB\-xfconfig <filename>\fP
+.IP
+This option sets the xf configuration file to the given
+value. This file contains the settings of xf. If a
+configuration file is specified, all other commandline
+settings are ignored.
+.\"
+.LP
+\fB\-xfcursors <filename>\fP
+.IP
+This option sets the xf cursor file to the given value. This
+file contains the names of the known cursors.
+.\"
+.LP
+\fB\-xfelements <pathname>\fP
+.IP
+This option sets the xf element directory to the given
+value. This directory contains the widget sources of the
+widgets that are part of the core Tk distribution.
+.\"
+.LP
+\fB\-xffonts <filename>\fP
+.IP
+This option sets the xf font file to the given value. This
+file contains the names of the known fonts.
+.\"
+.LP
+\fB\-xfhelp\fP
+.IP
+This option shows a small help screen.
+.\"
+.LP
+\fB\-xfhelps <pathname list>\fP
+.IP
+This option sets the xf help directory to the given value.
+This directory contains the help pages for xf. The parameter
+can be a list of pathnames separated by ':'.
+.\"
+.LP
+\fB\-xficonbar <filename>\fP
+.IP
+This option sets the xf iconbar file to the given value.
+This file contains the definition of the iconbar.
+.\"
+.LP
+\fB\-xficons <pathname list>\fP
+.IP
+This option sets the xf icon directory to the given value.
+This directory contains the icons for the menubar. The
+parameter can be a list of pathnames separated by ':'.
+.\"
+.LP
+\fB\-xfignore\fP
+.IP
+All options following this parameter are ignored by xf, and
+are directly passed on to the application.
+.\"
+.LP
+\fB\-xfkeysyms <filename>\fP
+.IP
+This option sets the xf keysyms file to the given value.
+This file contains the names of the known keysyms.
+.\"
+.LP
+\fB\-xflib <pathname>\fP
+.IP
+This option sets the xf library directory to the given
+value. This directory contains the font-, color-, cursor-
+and keysym-files.
+.\"
+.LP
+\fB\-xfmenubar <filename>\fP
+.IP
+This option sets the xf menubar file to the given value.
+This file contains the definition of the menubar.
+.\"
+.LP
+\fB\-xfmodelcolor\fP
+.IP
+This option sets the color model to \fBcolor\fP.
+.\"
+.LP
+\fB\-xfmodelmono\fP
+.IP
+This option sets the color model to \fBmonochrome\fP.
+.\"
+.LP
+\fB\-xfpos <filename>\fP
+.IP
+This option sets the xf position file to the given value.
+This file contains the positions of the windows.
+.\"
+.LP
+\fB\-xfprocs <pathname>\fP
+.IP
+This option sets the xf procedure directory to the given
+value. This directory contains the version archive of the
+procedures. Procedures can be stored with the shape toolkit
+(available at ftp.cs.tu-berlin.de).
+.\"
+.LP
+\fB\-xfsrc <pathname>\fP
+.IP
+This option sets the xf source directory to the given value.
+This directory contains the complete sources of xf.
+.\"
+.LP
+\fB\-xfstartup <filename>\fP
+.IP
+This option sets the xf startup file name to something
+different than .xf-init. This file is evaluated when xf is
+started.
+.\"
+.LP
+\fB\-xftemplates <pathname list>\fP
+.IP
+This option sets the xf template directory to the given
+value. This directory contains the source templates. You can
+use templates to create complex interface elements that are
+used repeatedly in your applications. These elements can be
+stored permanently. The parameter can be a list of pathnames
+separated by ':'.
+.\"
+.LP
+\fB\-xftmp <pathname>\fP
+.IP
+This option sets the xf temporary directory to the given
+value. This directory contains temporary files.
+.\"
+.LP
+\fB\-xfversion\fP
+.IP
+This option shows the current version number of XF.
+.\"
+.LP
+\fBfile\fP
+.IP
+The first name that is not an xf option is the name of the
+main application file or, if the file does not exist, the
+name of the new application. Additional file names that are
+passed to xf will be loaded as tcl files by xf.
+.\"
+.LP
+\fBapplication options\fP
+.IP
+All names that are no xf option and cannot be found as a
+file, are passed to the called application as parameters.
+
+.SH HINTS
+.PP
+.IP "\(bu"
+If you need hints, take a look at the FAQ's :-). They
+are part of the help system.
+
+.SH ENVIRONMENT
+.IP DISPLAY
+The default display to be used.
+.IP WISH_CMD
+This variable allows you to select a different interpreter
+(something else than in the xf script).
+.IP WISH_TEST_CMD
+This variable allows you to select a different interpreter
+for testing (something else than in the xf script).
+.IP XF_DIR
+This variable sets the xf toplevel directory to the given
+value.
+.IP XF_ADD_DIR
+This option sets the xf additionals directory to the given
+value. This directory contains widget sources of the widgets
+that are not part of the core Tk distribution, like the
+Hypertext widget. The parameter can be a list of pathnames
+separated by ':'.
+.IP XF_APP_FILE
+This variable sets the xf application default file to the
+given value. This file contains application defaults for xf.
+.IP XF_BIND_FILE
+This variable sets the xf binding file to the given value.
+This file contains the class bindings of the widgets, and
+procedures that are needed by the bindings.
+.IP XF_COLOR_FILE
+This variable sets the xf color file to the given value.
+This file contains the names and values of the known colors.
+.IP XF_CONFIG_FILE
+This variable sets the xf configuration file to the given
+value. This file contains the settings of xf. If a
+configuration file is specified, all other commandline
+settings are ignored.
+.IP XF_CURSOR_FILE
+This variable sets the xf cursor file to the given value.
+This file contains the names of the known cursors.
+.IP XF_ELEM_DIR
+This variable sets the xf element directory to the given
+value. This directory contains the widget sources of the
+widgets that are part of the core Tk distribution.
+.IP XF_FONT_FILE
+This variable sets the xf font file to the given value. This
+file contains the names of the known fonts.
+.IP XF_HELP_DIR
+This option sets the xf help directory to the given value.
+This directory contains the help pages for xf. The parameter
+can be a list of pathnames separated by ':'.
+.IP XF_ICONBAR_FILE
+This variable sets the xf iconbar file to the given value.
+This file contains the definition of the iconbar.
+.IP XF_ICONS_DIR
+This option sets the xf icon directory to the given value.
+This directory contains the icons for the iconbar. The
+parameter can be a list of pathnames separated by ':'.
+.IP XF_KEYSYM_FILE
+This variable sets the xf keysyms file to the given value.
+This file contains the names of the known keysyms.
+.IP XF_LIB_DIR
+This variable sets the xf library directory to the given
+value. This directory contains the font-, color-, cursor-
+and keysym-files.
+.IP XF_MENUBAR_FILE
+This variable sets the xf menubar file to the given value.
+This file contains the definition of the menubar.
+.IP XF_POS_FILE
+This variable sets the xf position file to the given value.
+This file contains the positions of the windows.
+.IP XF_PROC_DIR
+This variable sets the xf procedure directory to the given
+value. This directory contains the version archive of the
+procedures. Procedures can be stored with the shape toolkit
+(available at ftp.cs.tu-berlin.de).
+.IP XF_SRC_DIR
+This variable sets the xf source directory to the given
+value. This directory contains the complete sources of xf.
+.IP XF_TMPLT_DIR
+This variable sets the xf template directory to the given
+value. This directory contains the source templates. You can
+use templates to create complex interface elements that are
+used repeatedly in your applications. These elements can be
+stored permanently. The parameter can be a list of pathnames
+separated by ':'.
+.IP XF_TMP_DIR
+This variable sets the xf temporary directory to the given
+value. This directory contains temporary files.
+.IP XF_UNIQUE_ID
+This variable sets the unique id for xf. Each running xf
+that accesses the same file system as the other running xf,
+and does not use a local directory for temporary data should
+have a unique id. If this variable is not set, xf will
+create an id by itself. This variable is intended for these
+machines that have trouble with this id creation mechanism.
+.PP
+
+.SH BUGS
+.PP
+.\"
+.IP "\(bu"
+Surely there are many bugs.
+
+.SH "SEE ALSO"
+.PP
+Tcl(3), Tk-manuals(3)
+
+.SH AUTHOR
+.PP
+Sven Delmas
+.br
+TU Berlin, Germany
+.br
+sven@cimetrix.com
+
+

@@ -1,0 +1,106 @@
+<HTML><BODY><PRE>
+#ifndef __HASHTBL_H
+#define __HASHTBL_H
+
+
+
+ 
+typedef struct {
+        unsigned int fidx; <FONT COLOR="#00A000">/* Index in Dateinamenliste*/</FONT>
+        unsigned int row;  <FONT COLOR="#00A000">/* Zeile */</FONT>
+        unsigned int col;  <FONT COLOR="#00A000">/* Spalte */</FONT>
+}Element;
+
+
+
+
+typedef struct _Node Node;
+struct _Node {
+        Element elem;  <FONT COLOR="#00A000">/* Daten */</FONT>
+        Node    *next; <FONT COLOR="#00A000">/* Naechster Knoten */</FONT>
+};
+
+
+
+typedef struct {
+        Node *first; <FONT COLOR="#00A000">/* Erster Knoten */</FONT>
+        Node *last;  <FONT COLOR="#00A000">/* Letzter Knoten */</FONT>
+        char *word;  <FONT COLOR="#00A000">/* Wort fuer diese Knotenliste*/</FONT>
+}FirstNode;
+
+
+
+typedef struct {
+        FirstNode     *tbl; <FONT COLOR="#00A000">/* Array von FirstNode(s) */</FONT>
+        unsigned int  size; <FONT COLOR="#00A000">/* Gesamtgroesse des tbl Arrays */</FONT>
+        unsigned int  used; <FONT COLOR="#00A000">/* Belegte Plaetze 
+                              !(In feritger HashTbl. Belegungszustand)! */</FONT>
+        char          **fnames;  <FONT COLOR="#00A000">/* Array mit Dateinamen */</FONT>
+        unsigned int  files;     <FONT COLOR="#00A000">/* Groesse des "fnames" Array */</FONT>
+}HashTbl;
+
+
+<FONT COLOR="#00A000">/* Maximale Wortgroesse */</FONT>
+#define MAXWORDLEN (256)
+
+
+<FONT COLOR="#00A000">/* Maximale [Pfad]Dateinamen-laenge. */</FONT>
+#define MAXFNAMELEN (1024)
+
+
+<FONT COLOR="#00A000">/* Maximale laenge einer int Zahl als Zeichenkette */</FONT>
+#define MAXLENOFINTASSTRING (10)
+
+
+<FONT COLOR="#00A000">/* Maximale Groesse einer Zeile in der Indexdatei */</FONT>
+<FONT COLOR="#00A000">/* 256+1024+(2*10)+(3*sizeof(char)) = 1303 */</FONT>
+#define MAXBUFINDEXLINE (MAXWORDLEN+MAXFNAMELEN+(2*MAXLENOFINTASSTRING)+(3*(sizeof(char))))
+
+
+<FONT COLOR="#00A000">/* Automatische Groessenaenderung von HashTbl.tbl */</FONT>
+#define AUTO_RESIZE_SIZE (16384)
+
+
+<FONT COLOR="#00A000">/* Minimalgroesse einer Hashtabelle */</FONT>
+#define MINHTBLSIZE (5)
+
+
+
+int <A HREF="../refered/iniHTBL.htm">iniHTBL</A>( HashTbl *htbl );
+#include &lt;austab.h>
+int <A HREF="../refered/string2WHTBL.htm">string2WHTBL</A>( HashTbl *whtbl, char *data, unsigned int dataLen,
+                    char *aktFileName, Austab *austab );
+int <A HREF="../refered/buildHTBL.htm">buildHTBL</A>( HashTbl *srchtbl );
+int <A HREF="../refered/subFNameRefHTBL.htm">subFNameRefHTBL</A>( HashTbl *htbl, char *fname );
+int <A HREF="../refered/saveHTBL.htm">saveHTBL</A>( HashTbl *htbl, char *fname );
+int <A HREF="../refered/readHTBL.htm">readHTBL</A>( HashTbl *htbl, char *fname );
+int <A HREF="../refered/readWHTBL.htm">readWHTBL</A>( HashTbl *whtbl, char *fname );
+void <A HREF="../refered/searchHTBL.htm">searchHTBL</A>( HashTbl *htbl );
+void <A HREF="../refered/clearHTBL.htm">clearHTBL</A>( HashTbl *htbl );
+int <A HREF="../refered/getFNameIdxHTBL.htm">getFNameIdxHTBL</A>( HashTbl *htbl, char *fname, unsigned int *fidx );
+
+
+
+<FONT COLOR="#00A000">/*
+void clearFirstNode( FirstNode *fnode );
+void addFNameHTBL( HashTbl *htbl, char *fname );
+void subFNameHTBL( HashTbl *htbl, unsigned int idx );
+void printFNamesHTBL( HashTbl *htbl );
+void finalizeSizeWHTBL( HashTbl *htbl );
+void resizeHTBL( HashTbl *htbl );
+Node * newNode( void );
+void addWordWHTBL( HashTbl *htbl, char *word, unsigned int fidx,  
+                 unsigned int row,  unsigned int col);
+void printHTBL( HashTbl *htbl );
+*/</FONT>
+
+
+
+#else
+#error "Multiple include"
+#endif
+
+
+
+<FONT COLOR="#00A000">/*EOF*/</FONT>
+</PRE></BODY></HTML>

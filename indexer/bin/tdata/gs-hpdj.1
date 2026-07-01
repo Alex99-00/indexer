@@ -1,0 +1,1475 @@
+'\" t
+.\"****************************************************************************
+.\" File:     @(#)$Id: gs-hpdj.man,v 1.22 1999-10-16 20:21:31+02 Martin Rel $
+.\" Contents: Manual page for the ghostscript device driver "hpdj"
+.\" Author:   Martin Lottermoser, Metzgerfeldweg 9, 85737 Ismaning, Germany.
+.\"	      E-mail: martin.lottermoser@mch20.sbs.de
+.\"
+.\"****************************************************************************
+.\"*									      *
+.\"*	Copyright (C) 1997, 1998, 1999 by Martin Lottermoser		      *
+.\"*	All rights reserved						      *
+.\"*									      *
+.\"****************************************************************************
+.\"
+.\" This file must be passed through tbl before it is processed by (n/t)roff.
+.\" If your man(1) command does not do that, in particular if it does not even
+.\" react to the first line of this file, you should install a preprocessed
+.\" version of this manual page.
+.\"
+.\"****************************************************************************
+.\" Extract CM version and date, flagging intermediate versions:
+.de Id
+.ie \\n(.$>8 \{\
+.ds Vs \\$3+
+.ds Tg \n(yr-\n(mo-\n(dy
+.\}
+.el \{\
+.ds Vs \\$3
+.ds Tg \\$4
+.\}
+..
+.Id $Id: gs-hpdj.man,v 1.22 1999-10-16 20:21:31+02 Martin Rel $
+.\"
+.\"****************************************************************************
+.\"
+.TH "GS-HPDJ" 1 "\*(Tg" "hpdj 2.6"
+.\"
+.\"****************************************************************************
+.\"
+.SH NAME
+hpdj \- Ghostscript device driver for printers understanding PCL 3+
+.\"
+.\"****************************************************************************
+
+.SH SYNOPSIS
+\fBgs\fP [\fIoptions\fP] [\fIfiles\fP]
+.br
+\fIoption\fP ::= \fIprn_option\fP | \fIhpdj_option\fP
+.\" Actually, gs does not follow the XPG Utility Syntax Guidelines and you can
+.\" not only mix options and files but there are also multi-token options.
+
+\fIprn_option\fP can be any option defined for ghostscript's
+.I prn
+(printer) device.
+This includes all device-independent options described in \fIgs(1)\fP.
+You should also look into ghostscript's extended documentation
+(file \f(CWUse.htm\fR/\f(CWuse.txt\fR and the section
+.I Device parameters
+in \f(CWLanguage.htm\fR/\f(CWlanguage.txt\fR).
+\fIhpdj\fP does not support the \f(CWDuplex\fR parameter and
+it determines the correct value for \f(CWBitsPerPixel\fR automatically.
+.\" Orientation is supported.
+
+.na
+.hy 0
+.in +1c
+.ti -1c
+\fIhpdj_option\fP ::=
+\fB-dBlackLevels\fP=\fIinteger\fP |
+\fB-dCMYLevels\fP=\fIinteger\fP |
+\fB-sColorMode=\fP\fImode\fP |
+\fB-sColourMode=\fP\fImode\fP |
+\fB-dCompressionMethod=\fP\fImethod\fP | 
+\fB-dDryTime=\fP\fIseconds\fP | 
+\fB-dManualFeed\fP[\fB=\fP\fIboolean\fP] |
+\fB-sMarginFile=\fP\fIpathname\fP |
+\fB-sMediaType=\fP\fItype\fP |
+\fB-sModel=\fP\fImodel\fP |
+\fB-sPagecountFile=\fP\fIpathname\fP |
+\fB-sPrintQuality=\fP\fIquality\fP
+.in -1c
+\fImode\fP ::= \fBmono\fP | \fBCMY\fP | \fBCMY+K\fP | \fBCMYK\fP
+.br
+\fImethod\fP ::= \fB0\fP | \fB1\fP | \fB2\fP | \fB3\fP | \fB9\fP
+.br
+\fIboolean\fP ::= \fBfalse\fP | \fBtrue\fP
+.in +1c
+.ti -1c
+\fItype\fP ::= \fBplain\fP | \fBbond\fP | \fBPremium\fP | \fBglossy\fP |
+\fBtransparency\fP | \fBphoto\fP |
+.\" I've not specified the multi-word option values because their blanks must
+.\" be escaped and how to do that depends on the shell.
+\fIinteger\fP
+.ti -1c
+\fImodel\fP ::= \fB500\fP | \fB500C\fP | \fB510\fP | \fB520\fP | \fB540\fP |
+\fB550C\fP | \fB560C\fP | \fB850C\fP | \fB855C\fP | \fBunspec\fP
+.in -1c
+\fIquality\fP ::= \fBdraft\fP | \fBnormal\fP | \fBpresentation\fP |
+\fIinteger\fP
+.ad
+.hy
+
+Case is significant.
+Note that some options must be passed as strings (\fB-s\fP) and others as
+general tokens (\fB-d\fP).
+You should also keep in mind that
+.I gs
+effectively ignores every option it does not recognize,
+hence some care in spelling parameter names is necessary.
+
+Some options have synonyms for values which are listed only in the detailed
+description below.
+.\"
+.\"****************************************************************************
+
+.SH DESCRIPTION
+.SS Scope
+The ghostscript device driver
+.I hpdj
+is a ghostscript backend for printers understanding Hewlett-Packard's Printer
+Command Language, level 3+ (PCL 3+).
+It is intended to support in particular the following printer models:
+
+.in +1c
+.nf
+HP DeskJet 500
+HP DeskJet 500C
+HP DeskJet 510
+HP DeskJet 520
+HP DeskJet 540
+HP DeskJet 550C
+HP DeskJet 560C
+HP DeskJet 850C
+HP DeskJet 855C
+.fi
+.in -1c
+
+The driver does
+.I not
+support DeskJet printers understanding only HP PPA (Printing Performance
+Architecture) commands.
+If a printer's documentation does not say anything about its
+printer command language or
+you find a statement like "... is designed for Microsoft Windows" or
+"DOS support through Windows only",
+the printer is almost certainly a PPA printer and hence is intended
+.I exclusively
+for systems running Microsoft Windows.
+There exist ways of using a PPA printer with ghostscript,
+but not through \fIhpdj\fP.
+
+Different printer models usually implement model-specific subsets of all
+PCL-3+ commands or arguments to commands.
+You must therefore tell the driver by means of the
+.B Model
+option for which model the generated PCL code is intended.
+The model-dependent difference in the generated code is not great.
+Apart from margin specifications and colour capabilities, one can consider
+three groups of models which are treated with significant differences:
+
+.in +1c
+500,
+.br
+5xx except 500 and 540,
+.br
+540 and 8xx.
+.in -1c
+
+The third group is the one I refer to as the "new DeskJets" below.
+
+If you have a PCL-3 printer not appearing in the list above,
+the likelihood is still good that it will accept the files generated by
+\fIhpdj\fP.
+You can specify one of the supported models in these cases
+(it is sufficient to try one each from the groups just mentioned),
+or use the special model name 
+.B unspec
+which is treated like a new DeskJet with all model-dependent checks
+having been turned off.
+
+I have received reports that
+.I hpdj
+works with the following printers:
+
+.in +1c
+.nf
+HP DeskJet 340
+HP DeskJet 500
+HP DeskJet 500C (tested for mono only)
+HP DeskJet 520
+HP DeskJet 540
+HP DeskJet 560C
+HP DeskJet 600
+HP DeskJet 660C/660Cse
+HP DeskJet 670C
+HP DeskJet 672C
+HP DeskJet 680C
+HP DeskJet 690C
+HP DeskJet 690C+
+HP DeskJet 693C
+HP DeskJet 694C
+HP DeskJet 850C
+HP DeskJet 855C
+HP DeskJet 870Cse/870Cxi
+HP DeskJet 880C
+HP DeskJet 890C
+HP DeskJet 895Cse/Cxi
+HP DeskJet 1100C
+HP DeskJet 1120C
+HP OfficeJet 590
+HP OfficeJet 600
+HP OfficeJet 625
+HP 2000C/Cse/CN Professional Series Color Printer
+Lexmark 3000 Color Jetprinter
+.fi
+.in -1c
+
+Usually the people who send me reports do not state to which extent
+.I hpdj
+"works" for their printer model.
+
+I should like to extend this section with more specific information.
+Therefore, if you want to report success for a particular printer model not
+explicitly supported by \fIhpdj\fR,
+please mention the following items in your answer:
+
+.in +1c
+\h'-0.5c'\z\(bu\h'0.5c'\
+printer model
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+\fIgs\fP version
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+\fIhpdj\fP version
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+option combinations successfully tested (specify at least model, resolution,
+colour mode and, if used, the number of intensity levels)
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+printer-specific functionality you could not access
+.in -1c
+
+So far I have not heard of a PCL-3+ printer which cannot be driven by
+\fIhpdj\fP.
+Hence the really interesting part of success reports is the list of working
+option combinations,
+but since I included the above request in this manual page in December 1997,
+hardly anyone has sent me such a report.
+Possibly, users find this information unnecessary.
+.\"----------------------------------------------------------------------------
+.\"
+.SS Colour Modes
+Ignoring photo cartridges,
+DeskJet printers can be classified in four categories:
+.RS 0c
+.TP 0.6c
+\(bu
+The printer has only a black ink cartridge.
+.TP 0.6c
+\(bu
+The printer can print with either a black or a cyan/magenta/yellow (CMY)
+cartridge.
+.TP 0.6c
+\(bu
+The printer holds a CMY and a black cartridge simultaneously, but the inks
+are chemically incompatible and should not be overlayed.
+(Don't worry: the printer is not going to explode if they do.
+You merely get poorer results because the black ink will spread further than it
+should.)
+.TP 0.6c
+\(bu
+The printer holds a CMY and a black cartridge simultaneously and the inks
+can be mixed.
+.RE
+
+This leads to four \fIcolour modes\fP for the driver:
+.RS 0c
+.ne 3
+.TP 2c
+mono:
+Print in black.
+.TP 2c
+CMY:
+Print in cyan, magenta and yellow only.
+In this mode, "composite black" consisting of all three inks is used to stand
+in for true black.
+.TP 2c
+CMY+K:
+Print with all four inks, but never mix black with one of the others.
+.TP 2c
+CMYK:
+Print with all four inks.
+.RE
+
+Depending on the category of the model chosen, the driver will accept one or
+more of these modes.
+The possibilities are:
+
+.ne 7
+.RS 1c
+.TS
+;
+l l.
+Model	Colour Modes
+_
+500, 510, 520	mono
+500C, 540	mono, CMY
+550C, 560C	mono, CMY, CMY+K
+850C, 855C, unspec	all
+.TE
+.RE
+
+Note that a printer capable only of CMY might accept CMY+K or CMYK data,
+remapping them to CMY,
+and a printer capable of CMY+K might remap CMY data to CMY+K.
+.\"
+.\"----------------------------------------------------------------------------
+.\"
+.SS Print Quality Selection for Older DeskJets
+With the introduction of the DeskJet 540, HP added two new PCL commands to the
+language: Media Type and Print Quality.
+For older DeskJets (500, 500C, 510, 520, 550C and 560C), similar effects can be
+achieved by specifying some technical aspects of the printing process in detail.
+
+The
+.I hpdj
+driver accepts only the new Media Type and Print Quality specifications as
+options.
+For printers not understanding the new commands, these specifications are
+mapped to the older Depletion, Shingling, and Raster Graphics Quality commands
+based on recommendations from HP.
+.\" See TRG, page 6-34.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Media Sizes and Orientations
+Ghostscript looks at several sources to determine the page size for a
+document:
+
+.in +1c
+\h'-0.5c'\z\(bu\h'0.5c'\
+the default size set for
+.I gs
+(usually US Letter or ISO A4)
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+the value given to
+.B -sPAPERSIZE
+in the invocation
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+the size requested by the document, unless you specify
+.B -dFIXEDMEDIA
+.in -1c
+
+The last applicable item in this list overrides the others.
+
+The driver knows which media sizes are supported by each printer model and will
+refuse to print if an unsupported one is requested.
+The model
+.B unspec
+normally accepts all sizes,
+and it assumes the printer to understand all size commands which can be sent to
+one of the supported series-800 DeskJets.
+This can be changed with a margin file specification; see the
+.I CONFIGURATION
+section below for details.
+
+Each supported size is available in portrait and landscape orientation.
+Media should however always be put into the input tray independent of the
+intended orientation.
+Ghostscript and
+.I hpdj
+will take care of the rest.
+Hewlett-Packard's information on the required orientation of media in the
+input tray is not quite clear,
+but
+.I hpdj
+assumes it to be always "short edge first" with respect to the
+feeding direction.
+You should check your printer's manual whether this is correct,
+in particular if you have a DeskJet 400, 500 or 500C and wish to print on
+envelopes.
+Note that
+.I hpdj
+has no information about the dimension or orientation of the medium in the
+input tray:
+you must ensure yourself that this is appropriate.
+
+In setting up the PostScript default user space,
+.I hpdj
+does not treat envelope sizes differently.
+.\" The 2017 PostScript language supplement states (p. 39) that for envelopes
+.\" in portrait orientation the default user space origin should be in the
+.\" corner opposite to the return address and not located on an edge where the
+.\" flap is. For landscape orientation, the correct rotation of default user
+.\" space is then -90 degrees ("seascape") instead of the usual +90 degrees
+.\" used by setpagedevice. This implies that the generating program must treat
+.\" envelopes different from other media of the same size! I find this
+.\" unacceptable (and I could find stronger words than that).
+.\" In addition, at least on a DJ 850C the way in which one should insert
+.\" envelopes according to HP (flap on the right) leads to the expected result
+.\" if one uses the +90 degrees rotation.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Diagnostic Messages
+Error messages issued by
+.I hpdj
+start with "\f(CW? Device hpdj:\fR",
+warnings with "\f(CW?-W Device hpdj:\fR".
+Both are written on the standard error stream.
+.\"
+.\"****************************************************************************
+
+.SH OPTIONS
+The following options are not specific to the
+.I hpdj
+device but have specific meaning or restrictions:
+.RS 0c
+.\"----------------------------------------------------------------------------
+.TP 1c
+.B -sDEVICE=hpdj
+This option specification selects this driver.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -r resolution
+This option specifies the resolution in pixels per inch (ppi).
+The driver checks whether the model selected accepts the given
+resolution unless the model is \fBunspec\fP.
+Resolutions supported by at least some of the models in some of the colour
+modes are 75, 100, 150, 300 and 600 ppi.
+Only
+.B unspec
+permits unequal horizontal and vertical resolutions.
+For this case read the subsection on the Configure Raster Data command in the
+.I LIMITATIONS
+section below first.
+The default resolution for
+.I hpdj
+is set at compile time, usually to 300 ppi.
+.\"----------------------------------------------------------------------------
+.RE
+
+The following options are specific to \fIhpdj\fP:
+.RS 0c
+.\"----------------------------------------------------------------------------
+.TP 1c
+\fB-dBlackLevels=\fIlevels\fR and \fB-dCMYLevels=\fIlevels\fR
+.B Warning! These options are not based on HP documentation!
+Read the subsection on the Configure Raster Data command in the
+.I LIMITATIONS
+section below before using them.
+
+These options set the number of intensity levels per pixel and colorant
+to use when printing with black or CMY inks, respectively,
+and must be consistent with the colour mode.
+They permit access to the Colour Resolution Enhancement technology (C-REt)
+feature available in some series-800 DeskJets.
+The defaults are 0 or 2, depending on the colour mode chosen.
+Other values are only accepted for the models \fB850C\fP,
+.B 855C
+and
+\fBunspec\fP.
+I strongly suggest that you apply gamma correction and modify
+the halftone screens whenever you use non-default values for these options
+(see the
+.I CONFIGURATION
+section below).
+
+.B unspec
+accepts any non-negative number of levels except 1 up to 256.
+The models
+.B 850C
+and
+.B 855C
+accept the
+.I levels
+0, 2, 3 and 4
+with the following restrictions if any of the levels is larger than 2:
+.in +1c
+\h'-0.5c'\z\(bu\h'0.5c'\
+You can't use this feature with draft quality.
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+You can't use a colour mode of \fBCMY\fP.
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+You must use a resolution of 300 ppi.
+.br
+\h'-0.5c'\z\(bu\h'0.5c'\
+If you are using a non-monochrome mode, you must use
+4 levels for black.
+.in -1c
+When using the model
+.B unspec
+you should expect the printer to similarly limit the possibilities.
+So far I have not heard of a PCL-3+ printer supporting more than
+four intensity levels per colorant.
+
+Unfortunately, there is a problem here because ghostscript's internal colour
+model is not prepared for the situation where a device can render different
+small (< 32) numbers of intensity levels for different colorants.
+In this situation
+.I gs
+will in general assume that the number of black levels available is equal to
+that for CMY levels.
+Depending on which of the numbers is smaller, there will then either be unused
+black levels or some will be used more than once.
+
+Regrettably, best results on a DeskJet 850C seem to me to be achieved with
+4 black and 3 CMY levels, at least on plain paper.
+(4 CMY levels might be right for presentation quality on glossy paper or
+transparencies.)
+The
+.I CONFIGURATION
+section below presents a slightly dirty path out of this difficulty.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -sColorMode= mode "  \fRor\fP  -sColourMode=" mode
+This selects the colour mode to be used by the driver:
+\fBmono\fP (or \fBmonochrome\fP), \fBCMY\fP, \fBCMY+K\fP or \fBCMYK\fP.
+The default is \fBmono\fP.
+Which colour modes are accepted depends on the model, see
+.I Colour Modes
+in the section
+.I DESCRIPTION
+above.
+
+A value of
+.B CMY
+for this option also sets
+.B BlackLevels
+to zero,
+and if
+.B CMYLevels
+is zero when you demand any of \fBCMY\fP, \fBCMY+K\fP or \fBCMYK\fP,
+it is set to two.
+For all other situations you must ensure yourself that colour mode and
+intensity levels are consistent or
+.I hpdj
+will complain.
+This rule implies that you can ignore the level options unless you
+want to use a non-default number of levels.
+
+The PostScript page device dictionary entry \f(CWProcessColorModel\fR will not
+be correct for a colour mode of
+.B CMY
+or \fBCMY+K\fP.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -dCompressionMethod= method
+PCL interpreters understand several compression methods for raster graphics
+data in order to speed up host-printer communication.
+The possible choices are:
+
+  \fB0\fP  Unencoded, non-compressed
+  \fB1\fP  Runlength encoding
+  \fB2\fP  Tagged Image File Format (TIFF)
+  \fB3\fP  Delta Row Compression
+  \fB9\fP  Compressed Replacement Delta Row Encoding
+
+The default method is set at compile time, usually to 9.
+Requesting method 3 actually leads to a combination of methods 2 and 3.
+The DeskJet 500 does not support method 9.
+The driver may temporarily choose method 0 if a compressed data sequence would
+be longer than its uncompressed version.
+
+Compression rates can vary drastically, depending on the structure of the input.
+However, although the absolute values change, the relative order of efficiency
+between the methods is usually the order of increasing \fImethod\fP.
+In short: use method 9 (3 for the DeskJet 500).
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -dDryTime= delay
+With the exception of the DeskJets 500 and 500C,
+DeskJet printers can be told to guarantee a minimum drying time of
+.I delay
+seconds before the next page of the same print job is dropped on a newly
+printed page.
+(This interval can be terminated by pressing the Load/Eject button.)
+The printer will choose default values depending on the current print quality,
+hence it is normally not necessary to specify this option and
+the feature is even considered obsolete for newer DeskJets
+although it is still supported by some of them.
+
+Permissible values for
+.I delay
+are integers in the range
+.B \-1
+to \fB1200\fP,
+where
+.B \-1
+instructs
+.I hpdj
+not to send a corresponding command,
+.B 0
+establishes default values for the current print quality,
+and all other values explicitly request the duration in seconds.
+The default is \fB\-1\fP.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -dManualFeed\fR[\fP= boolean\fR]\fP
+It is possible to request a DeskJet printer to wait before each page of a
+document until the Load/Eject button is pressed on the printer.
+This is mostly intended for situations where some special medium is used or
+the medium has to be inserted into an input slot holding only one sheet at a
+time.
+The default setting for this option is \fBfalse\fP
+except for series-500 DeskJets printing on envelope sizes when it is
+\fBtrue\fP.
+
+Note that for current ghostscript versions this setting is independent of the
+value of the PostScript operator \f(CWmanualfeed\fR in \f(CWstatusdict\fR.
+If you want to set manual feeding from the PostScript code you must therefore
+use the \f(CWManualFeed\fR entry in the page device dictionary.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -sMarginFile= pathname
+This option must specify an existing file containing a list of supported media
+sizes and corresponding margin descriptions for the printer.
+This will take precedence over the builtin model-specific lists of sizes
+and margins.
+The format of the file is described in the
+.I CONFIGURATION
+section below.
+The default is not to use a margin file but the builtin lists.
+This option is primarily intended to be used with the model \fBunspec\fP.
+
+A margin file path can also be specified at compile time overriding the default
+behaviour for
+.B unspec
+only.
+Using the
+.B MarginFile
+option in addition will override the compiled-in margin file path.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -sMediaType= type
+This option selects (you guessed it) the type of medium you wish to print on.
+The possible choices are:
+\fB
+    0  plain paper
+    1  bond paper
+    2  HP Premium paper
+    3  glossy paper
+    4  transparency film
+    5  photo paper\fP
+
+The default is \fBplain paper\fP.
+For \fItype\fP, you can specify the full strings, the one-word strings
+resulting from dropping "paper", "film", and "HP", or an integer.
+Out-of-range numerical values generate a warning but are passed through to the
+printer if it is a model understanding the PCL command "Media Type".
+If it isn't, the effect is the same as specifying \fBplain paper\fP.
+The value \fB5\fP/\fBphoto paper\fP is only understood by some recent DeskJets
+(e.g., the DeskJet 690C) and will be ignored by older ones.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -sModel= model
+This option identifies the printer model for which the generated file is
+intended.
+The following names are accepted for \fImodel\fP:
+
+.in +1c
+\fB500\fP, \fB500C\fP, \fB510\fP, \fB520\fP, \fB540\fP, \fB550C\fP, \fB560C\fP,
+\fB850C\fP, \fB855C\fP, \fBunspec\fP.
+.in -1c
+.\" Actually, there is one model more: "none". This is only intended to be used
+.\" as a compile-time default, though, and not as a runtime choice.
+
+The choice of model primarily determines which resolutions, colour modes,
+intensity levels and media sizes the driver will accept,
+where the output will appear on the page,
+and to some extent what PCL code the driver will generate.
+Some of the models are treated identically.
+A default model can be set at compile time.
+If this has not been done, you must specify the
+.B Model
+option in every invocation.
+
+.B unspec
+is intended to be a stop-gap for DeskJet-compatible printers not presently
+supported by this driver.
+For \fBunspec\fP, all model-specific checks (e.g., supported resolutions)
+are turned off.
+Supported media sizes and margin settings are assumed to be identical with
+those for the DeskJets 850C/855C/870C/890C,
+but you can use the
+.B MarginFile
+option or its compile-time equivalent to override this.
+The PCL code generated assumes a "new" DeskJet in the sense that it should be
+at least at the level of a DeskJet 540 supporting the PCL commands Media Type
+and Print Quality.
+If you specify unequal horizontal and vertical resolutions or
+more than two levels of intensity per colour and pixel,
+the printer must in addition understand the Configure Raster Data command.
+Read the subsection on that command in the
+.I LIMITATIONS
+section below.
+
+If you choose to use
+.B unspec
+it is your responsibility to ensure that
+.I hpdj
+is only called with parameter values the printer can handle.
+This applies in particular to the resolution and the intensity levels.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -sPagecountFile= pathname
+The
+.I pathname
+must specify either a non-existent file in a directory with write permission
+or a writable file with a single line containing a non-negative integer.
+In the first case,
+.I hpdj
+will create the file and insert the number of pages processed,
+in the second case the number will be incremented by that amount.
+Parallel invocations of
+.I gs
+are permitted to use the same file.
+.I hpdj
+will also make the initial page count available in its page device dictionary.
+Note that in present ghostscript versions the PostScript operator
+\f(CWpagecount\fR in \f(CWstatusdict\fP always returns \f(CW4711\fR and is
+.\" Last checked with gs 5.50.
+not based on the value of \f(CWPageCount\fR in the page device dictionary.
+
+This option is mainly intended for spooler backends calling \fIhpdj\fP.
+It can be used to keep track of the total number of pages printed and also for
+per-job accounting.
+I recommend using this option for the first purpose and to make a note of the
+values in the resulting files whenever you insert a new ink cartridge.
+This will enable you to get an indication of how much a printed page costs and
+why it is a good idea to use
+.B draft
+quality whenever possible.
+
+The driver can be compiled without this option present
+but on a UNIX system I would not expect this to be done unless
+.I gs
+offers the same functionality in a driver-independent manner
+which it currently does not.
+
+.I hpdj
+is distributed with an example \f(CWif-hpdj\fR of a BSD spooler backend using
+this option.
+.\"----------------------------------------------------------------------------
+.TP 1c
+.BI -sPrintQuality= quality
+There are three print quality settings:
+
+.in +1c
+.TS
+tab(@);
+r l.
+\-1@\fBdraft\fP
+0@\fBnormal\fP
+1@\fBpresentation\fP or \fBbest\fP
+.TE
+.in -1c
+
+The default is \fBnormal\fP.
+You may specify the strings or an integer.
+Out-of-range numerical values will generate a warning but are passed
+through to the printer if it is a model understanding the PCL command
+"Print Quality".
+If it isn't, the effect is the same as specifying \fBnormal\fP.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Looking up Compile-Time Defaults
+Some default values for options can be chosen at compile time.
+If you later want to know these values, run
+.I gs
+on the following
+PostScript code:
+
+.in +1c
+.ft CW
+.nf
+currentpagedevice
+dup /Name get (hpdj) eq not
+{
+  (ERROR: You have not selected the hpdj driver.) =
+}
+{
+  (Model: ) print
+  dup /Model get =
+
+  (Resolution: ) print
+  dup /HWResolution get ==
+
+  (Compression method: ) print
+  dup /CompressionMethod get =
+
+  (Margin file: ) print
+  dup /MarginFile get
+  dup () eq
+  {pop (none)} if
+  =
+
+  (PagecountFile is ) print
+  dup /PagecountFile known not
+  {(not ) print} if
+  (supported.) =
+} ifelse
+pop
+quit
+.fi
+.ft R
+.in -1c
+
+Note that this will not necessarily return the compile-time defaults but only
+the values current at the time of execution.
+Therefore you should not specify any options except
+.B -sDEVICE=hpdj
+and, if your ghostscript executable has been compiled without a default model
+for
+.I hpdj
+or if you want to find out whether there is a compiled-in margin file path,
+\fB-sModel=unspec\fP.
+You should also make sure that you have not set environment variables
+modifying ghostscript's behaviour.
+.\"
+.\"****************************************************************************
+
+.SH CONFIGURATION
+.\"----------------------------------------------------------------------------
+.SS Margin Description File
+A margin description file (margin file for short) can be used to override the
+builtin model-specific lists of supported media sizes and the margins in
+force for each.
+This feature is mainly intended to be used in conjunction with
+\fB-sModel=unspec\fP:
+if you have a model not directly supported by this driver, look up the
+supported page sizes and corresponding printable regions in your printer's
+manual and enter them in a margin file.
+
+.B Note:
+Entering a page size in the margin file which is not really supported by your
+printer is not useful:
+the PCL interpreter will simply ignore the request to set this page size,
+and printer and driver may have diverging opinions about what the margins
+will be.
+If you need to print on a medium of a size not supported by your printer,
+choose a larger and printer-supported size in PostScript or via
+\fB-dFIXEDMEDIA\fP,
+shift the image if necessary,
+establish properly-positioned clipping regions within the real size, and print.
+However, if you have a newer DeskJet supporting custom page sizes, this is not
+necessary (see below).
+
+Margin specifications are important for two reasons:
+the values for the left and top margins determine how the output is positioned
+on the page,
+and sufficiently large values for the right and bottom margins prevent the
+print head being caught at the paper's edge and printing beyond the sheet,
+respectively.
+Because DeskJet printers often have an inconveniently large bottom margin
+(usually 0.4\-0.8 inches or 10\-20 mm),
+one might be tempted to specify smaller values than listed in the
+printer's manual.
+However, one user reported that this led to the printer depositing a large wet
+blob of black ink at the bottom of the page.
+Specifying a smaller margin on the right is in contrast probably harmless
+because,
+according to HP, DeskJet printers always clip at that margin.
+
+A line in the margin file can be blank, a comment line (first non-blank
+character is '\f(CW#\fR'), or one of the following:
+
+.in +1c
+\f(CWunit\fR
+.I unit
+.br
+.I code \ left  bottom  right  top
+.in -1c
+
+A \f(CWunit\fR line specifies in which units margin specifications in the
+following lines should be interpreted.
+.I unit
+can be either \f(CWin\fR or \f(CWmm\fR with \f(CWin\fR being the default.
+A unit specification remains in force until overridden by a following
+\f(CWunit\fR line.
+
+The second kind of line states that the model supports a particular page size,
+identified by its PCL page size \fIcode\fP,
+and specifies the margins in force for that size when printing in black,
+in raster graphics mode, and in portrait orientation for the medium
+(width \(<= height).
+Be careful with envelopes:
+older (pre-1997) HP documentation frequently gives their margins in landscape
+orientation;
+you can check this by looking for the largest margin value:
+in portrait orientation it should be at the bottom.
+The margins have to be specified as floating point numbers in inches or
+millimetres as announced by the last preceding \f(CWunit\fR line.
+The floating point format is that of the "C" locale.
+Depending on the model,
+.I hpdj
+will either assume that the same margins apply for colour printing (this is
+the case for \fBunspec\fP) or increase the bottom margin by a model-specific
+amount in that case.
+
+The
+.I code
+must be one of the following PCL page size codes
+(entries marked with an asterisk are those used by the model
+.B unspec
+if no margin file is employed):
+
+.ne 3
+.RS 1c
+.TS
+;
+r l.
+*1	US Executive (7.25 \(mu 10.5 in)
+*2	US Letter (8.5 \(mu 11 in)
+*3	US Legal (8.5 \(mu 14 in)
+6	US Tabloid (11 \(mu 17 in, also called "Ledger")
+15	US Statement (5.5 \(mu 8.5 in)
+16	Super B (305 \(mu 487 mm)
+*24	ISO/JIS A6 (105 \(mu 148 mm)
+*25	ISO/JIS A5 (148 \(mu 210 mm)
+*26	ISO/JIS A4 (210 \(mu 297 mm)
+27	ISO/JIS A3 (297 \(mu 420 mm)
+*45	JIS B5 (182 \(mu 257 mm).
+	This is distinct from ISO B5 (176 \(mu 250 mm).
+46	JIS B4 (257 x 364 mm).
+	This is distinct from ISO B4 (250 \(mu 353 mm).
+*71	Hagaki card (100 \(mu 148 mm)
+*74	US index card 4 \(mu 6 in
+*75	US index card 5 \(mu 8 in
+.\" 80 is probably US Monarch.
+*81	US no. 10 envelope (4.125 \(mu 9.5 in).
+*90	ISO DL envelope (110 \(mu 220 mm)
+.\" 91 is probably ISO C5.
+*92	ISO C6 envelope (114 \(mu 162 mm)
+*101	custom page size
+109	US A2 envelope (4.375 \(mu 5.75 in)
+.TE
+.RE
+
+The page size code 101 (custom page size) is not understood by older printers
+and may be used in a margin file only for the models \fB540\fP, \fB850C\fP,
+\fB855C\fP, and \fBunspec\fP.
+In these cases you can print, within certain limits, on arbitrarily sized media.
+The driver knows these limits and refuses to generate a file if you exceed them.
+For \fBunspec\fP, there are no limits.
+.I hpdj
+will tell the printer to expect a custom page size
+only if there is no fitting discrete entry.
+
+Every margin file must contain at least an entry which fits ghostscript's
+default page size,
+usually ISO A4 or US Letter.
+Only those sizes which are listed will be accepted by \fIhpdj\fP.
+
+.I hpdj
+is distributed with an example of a margin description file,
+\f(CWexample.mdf\fR.
+.\"
+.\"----------------------------------------------------------------------------
+.SS PostScript Configuration File
+Sometimes it is desirable to execute additional PostScript commands for a
+particular file or possibly all files sent to a particular printer or print
+queue.
+With ghostscript this is easily possible because
+.I gs
+accepts several files in the invocation and executes them sequentially.
+This is particularly appropriate for those PostScript operators which affect
+device-specific features and should therefore not appear in a portable page
+description.
+
+The
+.I hpdj
+distribution contains an example of an input filter \f(CWif-hpdj\fR for the BSD
+spooler \fIlpr(1)\fP permitting the use of a print-queue-specific configuration
+file.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Correcting Offsets
+A margin description file is intended to adapt
+.I hpdj
+to the difference in margin settings between printer models and should usually
+contain "official" information,
+preferably taken from the model's manual.
+
+A different situation arises if a particular printer's output is not properly
+positioned on the page even if the margin information is correct for this
+model.
+PostScript defines two arrays in the page device dictionary for correcting such
+misadjustments,
+both containing two numbers describing a desired shift of the page image with
+respect to device space coordinate axes but in different units.
+The values in the `\f(CWMargins\fR' array are interpreted with respect to a
+canonical default resolution,
+the newer `\f(CWPageOffset\fR' array
+(supported by ghostscript since probably gs 3.50)
+is taken to be in units of 1/72 inch ("big points", bp).
+For
+.I hpdj
+the device coordinate system has an
+.I x
+axis pointing to the right and a
+.I y
+axis pointing downwards in portrait orientation,
+and the canonical default resolution is the default resolution chosen at
+compile time (see the
+.I OPTIONS
+section above).
+
+As an example, assume your printer shifts its output 1 mm to the right
+and 0.5 mm upwards and the default resolution of your version of
+.I hpdj
+is 300 ppi.
+Now create a file containing either the PostScript code
+
+.in +1c
+.ft CW
+<< /Margins [-11.8 5.9] >> setpagedevice
+.\" Specifying tenths of pixels here may seem exaggerated. However, the DJ 850C
+.\" for example states that after calibration the vertical alignment is accurate
+.\" within +/-0.002 in or +/-0.6 pixels at 300 ppi. I can't imagine ever needing
+.\" that, but I can't see a reason either for throwing away accuracy. Moreover,
+.\" I do dot wish to suggest to the reader that s/he has to specify integers.
+.ft R
+.in -1c
+
+("shift 11.8 pixels to the left and 5.9 pixels down") or
+
+.in +1c
+.ft CW
+<< /PageOffset [-2.8 1.4] >> setpagedevice
+.ft R
+.in -1c
+
+("shift 2.8 bp to the left and 1.4 bp down")
+and have it executed by ghostscript before the file to be printed.
+If you specify both, \f(CWMargins\fR and \f(CWPageOffset\fR, the total shift
+performed by
+.I gs
+will be the sum of the two.
+
+The file \f(CWalign.ps\fR in the ghostscript distribution or the
+margin test files distributed with
+.I hpdj
+can be used to determine the necessary correction.
+You should be aware that you have to expect fluctuations between individual
+print jobs,
+in particular in the horizontal direction.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Gamma Correction
+DeskJets usually produce colour prints which are too dark (too much ink on the
+page).
+In this case you should perform
+.I gamma correction
+by modifying what PostScript calls \fItransfer functions\fP.
+In the simplest case,
+create a file containing the PostScript command
+
+.in +1c
+.ft CW
+{\fInumber\fP
+.ft CW
+exp} settransfer
+.in -1c
+.ft R
+
+where a good value for
+.I number
+is usually in the range \f(CW0.3\fR\-\f(CW0.5\fR,
+.\" HP recommends to experiment around a gamma value of 0.3 for the DeskJets 310
+.\" and 320 for 50 % shingling and 25 % depeletion (DJ3/4 p. 24).
+and specify this file in ghostscript's command line before the file you wish to
+print.
+Now the intensities of all colorants will be rescaled by exponentiation
+with \fInumber\fP.
+Because PostScript intensity values are in the range zero to one
+with zero meaning dark and one meaning light (additive interpretation),
+a value of \fInumber\fP < 1 will lead to lighter colours and
+\fInumber\fP > 1 results in darker colours.
+
+You can also set independent transfer functions for the four colorants
+by using the operator \f(CWsetcolortransfer\fR which expects four routines as
+arguments.
+Consult a PostScript manual if you want to learn more about transfer functions.
+
+For a device with less than 32 intensity levels per colorant,
+at resolutions below 800 ppi,
+and unless you explicitly set transfer functions,
+.I gs
+applies a default gamma correction roughly corresponding to a value of
+\f(CW0.8\fR for \fInumber\fP.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Different Numbers of Black and CMY Intensities
+DeskJets supporting C-REt apparently achieve more than two intensities per
+colorant by putting a variable number of layers of the same ink on top
+of each other.
+This happens during several passes of the print head.
+The number of levels which can be achieved is therefore determined by the
+number of passes which in turn is influenced by the print quality and the
+media type (that is apparently the reason why using C-REt in draft quality is
+useless).
+It is now likely that if one uses more levels than can be supported by the
+number of passes, the higher levels will look the same.
+This is what seems to happen if one prints with 4 intensity levels for CMY on
+plain paper with a DeskJet 850C:
+the fourth level is accepted by the printer but to me it looks
+indistinguishable from the third.
+.\" At least for magenta and yellow; cyan is distinguishable.
+
+In this situation we can compensate for ghostscript not correctly dealing with
+different numbers of black and CMY intensity levels
+by using PostScript's transfer functions.
+The idea is to specify in the invocation the higher number of levels for both,
+black and CMY,
+but to map the range for those components where actually only a smaller number
+of levels is distinguishable to a reduced range which
+.I gs
+will divide into the required (smaller) number of intervals.
+Although the printer will be told to expect the higher number of intensities,
+it will never receive them.
+However, if the assumptions above are correct, the highest level it does
+receive will anyway look like the highest level possible!
+
+For the case of 4 black and 3 intended CMY levels the CMY intensities must be
+remapped from the range [0, 1] to the range [1/3, 1].
+Here's the code, including an equal gamma value
+.I number
+for all four components:
+
+.in +1c
+.ft CW
+.nf
+{\fInumber\fP exp 2 mul 1 add 3 div}
+dup dup
+{\fInumber\fP exp}
+setcolortransfer
+.fi
+.ft R
+.in -1c
+
+In the call to
+.I gs
+you must now specify a value of 4 for both,
+.B BlackLevels
+and \fBCMYLevels\fP.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Halftoning
+Most printers offer only a small number of intensities per colorant
+and pixel.
+In order to generate a larger range of colours, one therefore employs
+.I halftoning
+which consists of dividing the pixel array into \fIhalftone cells\fP,
+each of which represents one effective pixel which can now display more shades.
+This method trades resolution for the number of shades and applies to all
+structures which have to be painted with a colour which cannot be represented
+exactly.
+.\" "Exactly" refers to the level grid set up by halftoning.
+At 300 ppi and with a bi-level device
+a typical choice is to use halftone cells of 5\(mu5 pixels
+leading to an effective resolution of 60 ppi and 26 shades per component.
+These are also ghostscript's default values at 300 ppi.
+
+Which kind of halftoning is appropriate depends not only on the printer but
+also on the document to be printed.
+For this reason PostScript offers access to the halftoning parameters.
+You should use this feature in particular if your printer supports more than
+two intensity levels because ghostscript does not recognize by itself that it
+can now obtain a higher effective resolution without a loss in the number of
+shades.
+However, should your printer support at least 32 intensity levels you need not
+bother about this point because in that case
+.I hpdj
+will not cause halftoning to be used.
+
+For those not familiar with PostScript, here's some code to redefine
+ghostscript's default halftoning state for non-monochrome colour modes
+to use an array of halftone cells with a resolution of
+.I frequency
+cells per inch
+(hence the resolution divided by
+.I frequency
+is the size of the halftone cells in pixels):
+
+.in +1c
+.ft CW
+.nf
+currenthalftone dup /HalftoneType get 2 eq
+{
+  begin
+    /RedFrequency   \fIfrequency\fP def
+    /GreenFrequency \fIfrequency\fP def
+    /BlueFrequency  \fIfrequency\fP def
+    /GrayFrequency  \fIfrequency\fP def
+    currentdict
+  end
+  sethalftone
+}
+{pop}  % Not prepared for this case.
+ifelse
+.fi
+.ft R
+.in -1c
+
+For general applications, reasonable values for
+.I frequency
+on a 3- or 4-level device at 300 ppi are \f(CW75\fR and \f(CW100\fR.
+You can use the file \f(CWcolorcir.ps\fR in the ghostscript distribution to
+gain some impression of the effects on the size of halftone cells and the
+number of shades you can distinguish.
+Consult a PostScript manual if you want to learn more about how to specify
+halftones.
+
+If you are using the colour mode
+.B CMYK
+and more than 2 black levels you should not set merely a single halftone
+screen (\f(CWsetscreen\fR, a type-1 or a type-3 halftone dictionary) because
+ghostscript's dithering routine can in this case return non-monotonic levels of
+black for monotonic input intensities.
+.\" Discovered with gs 5.10, hpdj at 4 levels using a 1-cell type-3 dictionary.
+.\" Verified with gs 5.50.
+.\" Also easily visible with a 2x2 line screen given to setscreen.
+However, if you specify independent halftone information for the colour
+components,
+.I gs
+uses a slower but more accurate algorithm instead which does not lead to the
+wrong behaviour.
+It is not necessary for the halftone information to be different for different
+components to achieve this.
+Note that ghostscript installs separate halftone screens for CMYK devices by
+default if the resolution is at least 150 ppi.
+.\" Last checked for gs 5.10 (definition of .sethiresscreen in gs_init.ps).
+.\"
+.\"****************************************************************************
+
+.SH LIMITATIONS
+.\"----------------------------------------------------------------------------
+.SS Ghostscript Version
+This manual page contains statements relying on undocumented features of
+ghostscript.
+These statements are to my best knowledge and belief correct for at least
+ghostscript 5.50,
+and I hope I've not missed significant deviations when testing with older
+versions.
+But I can't of course guarantee anything for newer ones.
+.\"
+.\"----------------------------------------------------------------------------
+.SS The Rendering Algorithm
+In ghostscript's internal architecture the ghostscript kernel calls on a
+device driver for basic drawing operations and to ship out completed pages.
+For most if not all print devices this process can be separated into rendering
+in memory and transferring the resulting array of pixels to a file or directly
+to a printer.
+
+Ghostscript has an abstract printer device (\fIprn\fP) which uses a
+"memory" or "command list"
+device for rendering and transfers the completed page to a printer-specific
+backend for output.
+Such a backend must supply several parameters for the rendering process but
+its main purpose is the conversion from ghostscript's internal pixel data
+structure to a printer-specific format.
+.I hpdj
+is such a \fIprn\fP-derived backend.
+This means in particular that
+.I hpdj
+does not have much influence on the rendering
+but also that a user can influence the rendering process by the usual methods
+available in PostScript.
+
+I do not claim that this leaves nothing to be desired.
+For example, there is no possibility in this implementation to perform
+Floyd-Steinberg dithering.
+Of course, one can implement error diffusion in a ghostscript device driver
+and a number of people have done so in printer-specific backends.
+I do not believe, though, that such an implementation belongs there:
+it should better be implemented in an improved rendering device.
+In that way, it could be used for other printer-specific backends as well.
+This is also true for every other kind of modification of the rendering process.
+I have therefore deliberately restricted
+.I hpdj
+to be a "purely printing" backend:
+it knows about PCL but not about rendering.
+
+Therefore,
+if you need better visual quality for documents with shades of grey or
+non-primary (non-CMYK) colours,
+this cannot be achieved by giving some tricky combination of option values to
+\fIhpdj\fP.
+Instead you should experiment with the relevant PostScript operators
+(see chapter 6 of the \fIPostScript Language Reference\fP),
+or ultimately extend ghostscript's
+.I prn
+device.
+.\"
+.\"----------------------------------------------------------------------------
+.SS The Configure Raster Data Command
+There is a new PCL-3+ command called "Configure Raster Data" for which
+until recently I had not been able to obtain documentation.
+This command is apparently the basis for supporting unequal resolutions in
+horizontal and vertical directions and for HP's Color Resolution Enhancement
+technology (C-REt).
+Some option values supported by
+.I hpdj
+lead to Configure Raster Data being used and
+.B must therefore be considered unsafe!
+
+At least some of the series-500 DeskJets as well as newer models claim to
+permit unequal resolutions in horizontal and vertical directions,
+in particular 600 \(mu 300 ppi.
+The corresponding implementation in \fIhpdj\fP,
+available only for the model \fBunspec\fP,
+is based on Configure Raster Data.
+It seems to work at least for the DeskJet 690C;
+it does not work for the DeskJet 870C (see below).
+I would however strongly advise against using these resolutions for printing
+on a series-500 DeskJet because,
+although these models have a 600 dpi addressable horizontal resolution grid
+they do not permit neighbouring pixels to be activated
+(and the dots printed still have a diameter of about 1/300 in).
+The raster data generated by
+.I gs
+does not obey this restriction.
+In addition, it is likely that the higher resolution is anyway only supported
+for the printer's builtin fonts and not for general raster data.
+
+Concerning the DeskJet 870C,
+my impression is that although some HP documents and drivers use expressions
+like "600x300 dpi C-REt color" for this printer,
+the model does not really support a resolution of 600 \(mu 300 ppi.
+First, it does not accept \fIhpdj\fP's output with this resolution,
+and second,
+if one redirects the best output of HP's Windows driver for this printer to a
+file, the result is a file with what I've called a mixed resolution,
+i.e., 600 ppi for black and 300 ppi for CMY.
+To me it looks therefore as if Hewlett-Packard has been sloppy in formulating
+its documentation.
+
+I am not quite certain what HP means by C-REt or PhotoREt but
+it seems to be a combination of hardware functionality and properties of
+HP printer drivers.
+The hardware part makes it possible to specify more than the
+two basic intensities, on or off, per colorant and pixel.
+As far as I know, this capability is only available in series-800 DeskJets
+and it has to be accessed by Configure Raster Data.
+The implementation of non-default values for \fIhpdj\fP's options
+.B BlackLevels
+and
+.B CMYLevels
+is therefore based on Configure Raster Data.
+It works at least with the DeskJets 850C, 870C and 890C.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Performance for Larger Numbers of Intensity Levels
+This could be improved by replacing some generic routines by more specialized
+ones for particular parameter values.
+There does not seem much sense in doing this, though, until I know that the
+code in question is needed for some printer model.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Mixed Resolutions
+Newer DeskJets are able to print with different resolutions for black and
+CMY on the same region of a page.
+For example, the best quality on a DeskJet 850C is achieved with 600 ppi for
+black and 300 ppi for CMY.
+This is also due to the new Configure Raster Data command and is not supported.
+I suspect that implementing this really well in ghostscript is not a simple
+task and probably requires modifying the ghostscript kernel.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Photo Cartridges
+From what I've heard, DeskJet printers with photo cartridges installed do not
+use a CMYK palette but instead one with 6 components.
+I have no official information on this interface
+and ghostscript currently does not support `\f(CWDeviceN\fR' as a
+native colour space.
+.\"
+.\"----------------------------------------------------------------------------
+.SS Cartridge Alignment
+DeskJet printers with more than one ink cartridge present should usually be
+configured for the proper relative alignment of these cartridges.
+Apparently, this information is stored in not-immediately-volatile memory
+in the printer together with some default settings like the default media size
+which are not relevant for printing with \fIhpdj\fP.
+As I do not have information on how this is done,
+you will need to use one of HP's programs for this purpose.
+
+On a Linux system, try installing and running HP's DOS DeskJet control panel
+\f(CWDJCP\fR in the DOS emulator.
+I did not get it to work, but you might have more luck (or skill).
+\f(CWDJCP\fR should be present on one of the installation media you received
+with your printer.
+.\"
+.\"****************************************************************************
+
+.SH FUTURE DIRECTIONS
+I intend to release a new version in a few months for which I am going to
+change the name of the driver from
+.I hpdj
+to (probably) \fIpcl3\fP.
+The new name will more accurately reflect what this driver is for.
+
+This new version will be based on more extensive HP documentation,
+will therefore support more printers,
+and it will add some new functionality.
+.\"
+.\"****************************************************************************
+
+.SH KNOWN BUGS
+There are no known bugs in
+.I hpdj
+proper,
+but there do exist restrictions or bugs in
+.I gs
+which can lead to faulty behaviour when printing with \fIhpdj\fP.
+As far as I noticed them
+they are mentioned in the body of this manual page at the relevant points.
+.\"
+.\"****************************************************************************
+
+.SH SEE ALSO
+gs(1)
+
+.ne 3
+Adobe Systems
+.br
+.I PostScript Language Reference
+.br
+Third edition, 1999.
+
+.ne 2
+.I A First Guide to PostScript
+.br
+\f(CWhttp://www.cs.indiana.edu/docproject/\%programming/\%postscript/\%\
+postscript.html\fR
+
+.ne 3
+Hewlett-Packard
+.br
+.I Technical Reference Guide for the HP DeskJet 500 Series Printers
+.br
+First edition, October 1994. Manual Part Number: C2170-90099.
+
+.in +0.5c
+Unfortunately, this guide does not describe all valid commands.
+I was told in October 1997 by the German firm distributing HP manuals
+that there is no newer HP manual on PCL 3 and that they had even
+considered writing one themselves for this reason.
+.in -0.5c
+.\"
+.\"****************************************************************************
+
+.SH AUTHOR
+Copyright \(co 1996, 1997, 1998, 1999 by Martin Lottermoser,
+Metzgerfeldweg 9, 85737 Ismaning, Germany.
+.br
+E-mail: \f(CWmartin.lottermoser@mch20.sbs.de\fR.
+
+This is free software,
+released under the terms of the GNU Library General Public License (LGPL),
+Version 2.
+.B USE IT AT YOUR OWN RISK.
+
+.I hpdj
+has a home page at
+\f(CWftp://ftp.sbs.de/pub/graphics/\%ghostscript/\%pcl3/\%pcl3.html\fR.
+The source code for the driver is available in the same directory,
+file \f(CWhpdj-\fP\fIversion\fP\f(CW.tar.gz\fR.
+You should, however, keep in mind that the name of the driver will change in
+the future (see \fIFUTURE DIRECTIONS\fP) and this will of course be reflected
+in the names of files.

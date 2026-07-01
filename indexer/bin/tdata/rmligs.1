@@ -1,0 +1,39 @@
+.\" Process this file with
+.\" groff -man -Tlatin1 rmligs.1
+.\"
+.TH RMLIGS 1 "March 2000" Linux "User Manuals"
+.SH NAME
+rmligs \- remove incorrectly used ligatures from German LaTeX documents
+.SH SYNOPSIS
+.B rmligs
+.RB [ options ]
+.I FILE ...
+.SH DESCRIPTION
+.B rmligs
+is a program for removing incorrectly used ligatures from LaTeX documents.
+This version is intended for German language texts only. Words like
+`Auflage' e.g. will be changed to `Auf"|lage' which is typographically
+correct.
+.PP
+The wordlist data is based on the igerman98 dictionary.
+.SH OPTIONS
+.TP
+.IP -f
+filter mode. This is useful for streaming.
+.IP -t
+test mode. This just shows what would be changed but nothing will be
+written (read-only). This does not make sense in filter mode.
+.IP -q
+quiet operation
+.SH "SEE ALSO"
+The German language
+.IR README
+file from the documentation of this program.
+.SH BUGS
+There is no sanity checking of LaTeX files; rmligs will happily correct
+words in all files - even binaries! For safety reasons there is always
+a .bak file created.
+.SH AUTHOR
+Björn Jacke
+.PP
+Send mail to bjoern.jacke@gmx.de for bug reports and suggestions.

@@ -1,0 +1,57 @@
+'\" t
+.\"
+.\" Copyright 2002 Sun Microsystems, Inc. All rights reserved.
+.\" SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+.\"
+.TH serialver 1 "13 June 2000"
+.\" .TH serialver 1 "12 May 2000"
+.SH NAME
+serialver \- serial version command
+.\"
+.\" This comment retained for historical purposes only:
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/j2se/1.3/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.
+.\" 
+.SH SYNOPSIS
+.B serialver 
+[
+.B \-show
+] [
+.I classnames
+]
+.SH DESCRIPTION
+.IX "serial version command" "" "serial version command \(em \fLserialver\fP"
+.IX "serialver" "" "\fLserialver\fP \(em serial version command"
+The 
+.B serialver 
+command returns the
+.B serialVersionUID
+for one or more classes in
+a form suitable for copying into an evolving class.
+When invoked
+with no arguments, it prints a usage line.
+.SH OPTIONS
+The following option is supported:
+.TP 15
+.B \-show
+Displays a simple user interface.
+Enter the full class name
+and press either the Enter key or the Show button to display
+the
+.BR serialVersionUID .
+.SH OPERANDS
+.TP 15 
+.I classnames
+One or more class names.
+.SH SEE ALSO
+.LP
+See (or search
+.BR java.sun.com )
+for the following:
+.TP 5
+.B java.io.ObjectStreamClass @
+http://java.sun.com/j2se/1.3/docs/api/java/io/ObjectStreamClass.html

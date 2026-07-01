@@ -1,0 +1,62 @@
+.\" -*- nroff -*-
+.\" Copyright (C) 2002 Thorsten Kukuk
+.\" Author: Thorsten Kukuk <kukuk@suse.de>
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2 as
+.\" published by the Free Software Foundation.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software Foundation,
+.\" Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+.\"
+.TH rpasswd 1 "May 2002" "pwdutils"
+.SH NAME
+rpasswd \- change user password on remote server
+.SH SYNOPSIS
+.TP 5
+\fBrpasswd\fR
+[\fB-4\fR|\fB-6\fR] [\fB-a\fR] [\fB-f \fIconfig-file\fR] [\fB-h \fIhostname\fR] [\fB-v\fR] [\fBname\R]
+.SH DESCRIPTION
+\fBrpasswd\fR changes passwords for user accounts on a remote server over
+a secure SSL connection. A normal user may only change the password for
+their own account, if the user knows the password of the administrator
+account (in the moment this is the root password on the server), he
+may change the password for any account if he calls \fBrpasswd\fR with
+the \fB-a\fR option.
+.SH OPTIONS
+.TP
+.B "\-a, \-\-admin"
+With this option, \fBrpasswd\fR connects as administrator user to the
+remote server. The user has to supply the administrator password
+and can change then every password.
+.TP
+.BI "\-f, \-\-config-file" " config-file"
+Specify another configuration file than \fI/etc/rpasswd.conf\fR.
+.TP
+.BI "\-h, \-\-hostname" " hostname"
+Specify the name of the server, where
+.BR rpasswdd (8)
+is running.
+.TP
+.B "-4"
+\fBrpasswd\fR will only use IPv4 to connect to the server.
+.TP
+.B "-6"
+\fBrpasswd\fR will only use IPv6 to connect to the server.
+.B "\-v, \-\-verbose"
+Be verbose, print SSL connection data.
+.SH FILES
+/etc/rpasswd.conf \- configuration file
+.SH SEE ALSO
+.BR passwd (1),
+.BR passwd (5),
+.BR rpasswd.conf (5),
+.BR rpasswdd (8)
+.SH AUTHOR
+Thorsten Kukuk <kukuk@suse.de>

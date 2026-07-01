@@ -1,0 +1,110 @@
+.TH ALSAMIXER 1 "15 May 2001"
+.SH NAME
+alsamixer \- soundcard mixer for ALSA soundcard driver, with ncurses interface
+.SH SYNOPSIS
+
+\fBalsamixer\fP [\fIoptions\fP]
+
+.SH DESCRIPTION
+\fBalsamixer\fP is an ncurses mixer program for use with the ALSA
+soundcard drivers. It supports multiple soundcards with multiple devices.
+
+.SH INVOKING
+
+\fBalsamixer\fP [\fIoptions\fP]
+
+.SS Options
+
+.TP
+\fI-h, -help\fP 
+Help: show available flags.
+
+.TP
+\fI-c\fP <card number or idenfication>
+Select the soundcard to use, if you have more than one. Cards are
+numbered from 0 (the default).
+
+.TP
+\fI-D\fP <device identification>
+Select the mixer device to control.
+
+.TP
+\fI-g\fP <toggle color settings>
+Toggle the using of colors.
+
+.TP
+\fI-s\fP <minimize mixer window>
+Minimize the mixer window.
+
+.SH KEYBOARD COMMANDS
+\fBalsamixer\fP recognizes the following keyboard commands to control the soundcard. 
+
+.SS
+General Controls
+
+The \fILeft\fP and \fIright arrow\fP keys are used to select the
+channel (or device, depending on your preferred terminology). You can
+also use \fIn\fP ("next") and \fIp\fP ("previous").
+
+The \fIUp\fP and \fIDown Arrows\fP control the volume for the
+currently selected device. You can also use \fI+\fP or \fI-\fP for the
+same purpose. Both the left and right signals are affected. For
+independent left and right control, see below.
+ 
+The \fIB\fP or \fI=\fP key adjusts the balance of volumes on left and
+right channels.
+
+\fIM\fP toggles muting for the current channel (both left and right). You can
+mute left and right independently by using \fI,\fP (or \fI<\fP) and
+\fI.\fP (or \fI>\fP) respectively.
+
+\fISPACE\fP toggles recording: the current channel will be added or
+removed from the sources used for recording. This only works for valid
+input channels, of course.
+You can toggle left and right independently by using \fIInsert\fP (or \fI;\fP)
+and \fIDelete\fP (or \fI'\fP) respectively.
+
+\fIL\fP re-draws the screen.
+
+.SS
+Quick Volume Changes
+
+\fIPageUp\fP increases volume by 5.
+
+\fIPageDown\fP decreases volume by 5.
+
+\fIEnd\fP sets volume to 0.
+
+You can also control left & right levels for the current channel
+independently, as follows:
+
+[\fIQ\fP | \fIW\fP | \fIE\fP ]  -- turn UP [ left | both | right ]
+
+[\fIZ\fP | \fIX\fP | \fIC\fP ] -- turn DOWN [ left | both | right ]   
+
+If the currently selected mixer channel is not a stereo channel, then
+all UP keys will work like \fIW\fP, and all DOWN keys will work like \fIX\fP.
+
+.SS
+Exiting
+
+Quit the program with \fIALT Q\fP, or by hitting \fIESC\fP.
+
+.SH SEE ALSO
+\fB
+amixer(1),
+aplay(1),
+arecord(1)
+\fP
+
+.SH BUGS 
+Some terminal emulators (e.g. \fBnxterm\fP) may not
+work quite right with ncurses, but that's their own damn
+fault. Plain old \fBxterm\fP seems to be fine.
+
+.SH AUTHOR
+.B alsamixer
+has been written by Tim Janik <timj@gtk.org> and
+been furtherly improved by Jaroslav Kysela <perex@suse.cz>.
+
+This manual page was provided by Paul Winkler <zarmzarm@erols.com>.

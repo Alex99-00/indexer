@@ -1,0 +1,188 @@
+.\" Copyright 1999, 2000, 2001, 2002 SuSE Linux AG Nuernberg, Germany
+.\" Author: Thorsten Kukuk <kukuk@suse.de>
+.\" May be distributed under the GNU General Public License
+.TH LOGIN 1 "15. July 2002" "PAM Login 3.8" "Linux Administrator's Manual"
+.SH NAME
+login \- Begin session on the system
+.SH SYNOPSIS
+.B login
+[
+.BR \-p
+]
+[
+.IR username
+]
+.br
+.B login
+[
+.BR \-p
+] [
+.BR \-h
+.IR host
+] [
+.BR \-f
+.IR username
+]
+.br
+.B login
+[
+.BR \-p
+]
+.BR \-r
+.IR host
+.SH DESCRIPTION
+.B login
+is used when signing onto a system.
+If no argument is given,
+.B login
+prompts for the username.
+
+The user is then prompted for a password, where approprate.
+Echoing is disabled to prevent revealing the password. Only a small
+number of password failures are permitted before
+.B login
+exits and the communications link is severed.
+
+If password aging has been enabled for the account, the user
+may be prompted for a new password before proceeding. He
+will be forced to provide his old password and the new
+password before continuing. Please refer to
+.BR passwd (1)
+for more information.
+
+The user and group ID will be set according to their values in the
+.I/etc/passwd
+file. There is one exception if the user ID is zero: in this case,
+only the primary group ID of the account is set. This should prevent
+that the system adminitrator cannot login in case of network problems.
+The value for
+.BR $HOME ,
+.BR $SHELL ,
+.BR $PATH ,
+.BR $LOGNAME ,
+and
+.B $MAIL
+are set according to the appropriate fields in the password entry.
+.B $PATH
+defaults to
+.I /usr/local/bin:/bin:/usr/bin:.
+for normal users, and to
+.I /sbin:/bin:/usr/sbin:/usr/bin
+for root if not other configured. Ulimit, umask and nice values
+may also be set according to entries in the GECOS field. The
+environment variable
+.B $TERM
+will be preserved, if it exists (other environment variables are
+preserved if the
+.B \-p
+option is given) or be initialize to the terminal type on your tty
+line, as specified in
+.IR /etc/ttytype .
+
+Then the user's shell is started. If no shell is specified for the
+user in
+.BR /etc/passwd ,
+then
+.B /bin/sh
+is used.  If there is no directory specified in
+.IR /etc/passwd ,
+then
+.I /
+is used (the home directory is checked for the
+.I .hushlogin
+file described above).
+
+This login implementation does ignore
+.I /etc/nologin
+and
+.IR /etc/securetty .
+You need to configure this in the PAM configuration file for
+.B login
+in
+.IR /etc/pam.d/login .
+
+.B login
+reads the
+.IR /etc/login.defs (5)
+configuration file. Please refer to this documenation for
+options which could be set.
+
+.SH OPTIONS
+.TP
+.B \-p
+Used by
+.BR getty (8)
+to tell
+.B login
+not to destroy the environment
+.TP
+.B \-f
+Used to skip a second login authentication.  This specifically does
+.B not
+work for root, and does not appear to work well under Linux.
+.TP
+.B \-h
+Used by other servers (i.e.,
+.BR telnetd (8))
+to pass the name of the remote host to
+.B login
+so that it may be placed in utmp and wtmp.  Only the superuser may use
+this option.
+.TP
+.B \-r
+Perform autologin protocol for rlogin.
+
+.SH "SPECIAL ACCESS RESTRICTIONS"
+The file
+.I /etc/securetty
+lists the names of the ttys where root is allowed to log in. One name
+of a tty device without the /dev/ prefix must be specified on each
+line.  If the file does not exist, root is allowed to log in on any
+tty. You need to add the
+.B /lib/security/pam_securetty.so
+module in
+.I /etc/pam.d/login
+for activating.
+.PP
+.SH FILES
+.nf
+/var/run/utmp \- list of current login sessins
+/var/log/wtmp \- list of previous login sessions
+/var/log/lastlog \- list of times of previous user logins
+/etc/passwd \- user account information
+/etc/shadow \- encrypted passwords and age information
+/etc/motd \- system message file
+/etc/ttytype \- list of terminal types (/etc/login.defs)
+.fi
+.SH "SEE ALSO"
+.BR init (8),
+.BR getty (8),
+.BR mail (1),
+.BR passwd (1),
+.BR passwd (5),
+.BR environ (7),
+.BR shutdown (8),
+.BR login.defs (5)
+.SH BUGS
+
+The undocumented BSD
+.B \-r
+option is not tested.
+
+A recursive login, as used to be possible in the good old days,
+no longer works; for most purposes
+.BR su (1)
+is a satisfactory substitute. Indeed, for security reasons,
+login does a vhangup() system call to remove any possible
+listening processes on the tty. This is to avoid password
+sniffing. If one uses the command "login", then the surrounding shell
+gets killed by vhangup() because it's no longer the true owner of the tty.
+This can be avoided by using "exec login" in a top-level shell or xterm.
+
+.SH AUTHOR
+Derived from BSD login 5.40 (5/9/89) by Michael Glad (glad@daimi.dk)
+for HP-UX
+.br
+Ported to Linux 0.12: Peter Orbaek (poe@daimi.aau.dk)
+.br
+Added new features: Thorsten Kukuk (kukuk@suse.de)

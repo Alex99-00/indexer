@@ -1,0 +1,171 @@
+<HTML><BODY><PRE>
+<FONT COLOR="#00A000">/*
+BEGIN  C-Head v0.2
+
+
+  -Von:
+   Alexander Klupsch, ia3394
+
+
+  -Dateiname:
+   datei.c
+
+
+  -Sprache:
+   ANSI-C
+
+
+  -Main(0|1):
+   0
+
+
+  -Zweck/Beschreibung:
+   Funktionen die auf/mit Dateien arbeiten.
+
+
+  -Programm:
+   indexer
+
+
+  -Besonderheiten:
+   Datentyp "struct stat" wird als structStat neu definiert.
+   Funktion stat(...) wird ueber Stat(...) aufgerufen.
+   -> MSVC kennt mit Parameter "/Za" "stat(...)" und "struct stat" nicht.?
+
+END---------------------------------------------------------------------75->
+*/</FONT>
+
+
+#include &lt;stdio.h>
+#include &lt;sys/stat.h>
+#include &lt;assert.h>
+
+#include &lt;alloc.h>
+#include &lt;datei.h>
+
+
+
+#if defined(_WIN32)
+    typedef struct _stat structStat;
+#else
+    typedef struct stat structStat;
+#endif
+
+
+int <A HREF="../refered/Stat.htm">Stat</A>( char *fname, struct<A HREF="../refered/Stat.htm">Stat</A> *fstatus ) <A NAME="Stat">{</A>
+#if defined(_WIN32)
+    return (_stat( fname, fstatus ));
+#else
+    return (stat( fname, fstatus ));
+#endif
+}
+
+
+
+<FONT COLOR="#00A000">/* 
+ Existiert Regulaere-Datei "fname" ?
+ -> Nicht Directory, nicht Geraetedateien!
+ 
+ IN : fname - path/name der zu testenden Datei
+ OUT: true(1)|false(0)
+*/</FONT>
+int <A HREF="../refered/findFile.htm">findFile</A> ( char *fname ) <A NAME="findFile">{</A>
+    FILE *fz = NULL;
+    structStat fstatus;
+    
+    if ( fname == NULL )
+         return 0;
+
+    <FONT COLOR="#00A000">/* Muss in readFile(...) funktionieren und ist ein guter Test */</FONT>
+    if ( <A HREF="../refered/Stat.htm" NAME="Stat1">Stat</A>(fname, &fstatus) &lt; 0 ) {
+         return 0;
+    }
+
+<FONT COLOR="#00A000">/* Abfragen ob Datei eine Regulaere Datei ist */</FONT>
+#if defined(_WIN32)
+    if ( ! (_S_IFREG & fstatus.st_mode) )
+             return 0;	
+#else
+    if ( ! (S_ISREG( fstatus.st_mode )) )
+         return 0;
+#endif
+
+    <FONT COLOR="#00A000">/* Darf "ich" die oeffnen? 
+       -> Ist eine fuer "mich" existente Datei */</FONT>
+    fz = fopen ( fname, "rb" );
+     
+    if ( fz != NULL ) {
+         (void)fclose( fz );
+         return 1; <FONT COLOR="#00A000">/* OK */</FONT>
+    } else {         
+         return 0; 
+    }
+    
+}
+
+
+
+<FONT COLOR="#00A000">/*
+  Liesst Datei "fname" ein und speichert die Laenge in "lenOfFile"
+  
+  IN:  fname - pfad/name der einzulesenden Datei
+       lenOfFile -  zum ablegen der Laenge des eingelesenen Dateiinhalts
+       
+  OUT: return - Dateiinhalt
+       lenOfFile - Laenge des eingelesenen Dateiinhalts
+*/</FONT>
+char * <A HREF="../refered/readFile.htm">readFile</A>( char *fname, unsigned int *lenOfFile ) <A NAME="readFile">{</A>
+
+    FILE *fz=NULL;
+    structStat fstatus;    
+    size_t len=0;
+    char *data=NULL;
+
+    assert( lenOfFile != NULL );
+
+    *lenOfFile = 0;
+        
+    if ( ! <A HREF="../refered/findFile.htm" NAME="findFile1">findFile</A>(fname) ) {
+         printf("Datei \"%s\" nicht gefunden oder keine Regulaere Datei.\n", fname);
+         return data;
+    }
+    
+    fz = fopen(fname, "rb");
+    
+    if (fz == NULL) {
+        printf("Datei \"%s\" konnte nicht geoeffnet werden.\n", fname);
+        return data;
+    }
+    
+    if (<A HREF="../refered/Stat.htm" NAME="Stat2">Stat</A>(fname, &fstatus) &lt; 0) {<FONT COLOR="#00A000">/* -> findFile(fname) */</FONT>
+        printf("Fuer Datei \"%s\" konnte kein Status ermittelt werden.\n",
+        fname);
+        return data;
+    }
+    
+    <FONT COLOR="#00A000">/* Speicher in der Groesse der Datei besorgen */</FONT>
+    data = <A HREF="../refered/MALLOC.htm" NAME="MALLOC1">MALLOC</A>( (size_t)(fstatus.st_size + 1) );
+    
+    <FONT COLOR="#00A000">/* Datei komplet einlesen, laenge merken 
+       -> vergleich mit fstatus.st_size */</FONT>
+    len = fread(data, 1, (size_t)fstatus.st_size, fz);
+    (void)fclose(fz); <FONT COLOR="#00A000">/* Datei verarbeitet */</FONT>
+    data[len]='\0'; <FONT COLOR="#00A000">/* Zeichenkette Terminieren */</FONT>
+    
+    <FONT COLOR="#00A000">/* Ist alles eingelesen worden? */</FONT>
+    if (len != fstatus.st_size) {
+        data = <A HREF="../refered/FREE.htm" NAME="FREE1">FREE</A>(data);
+        fprintf(stderr, "Dateiinhalt von \"%s\" konnte nicht eingelesen \
+werden.\n", fname);
+        return data;
+    }
+    
+    <FONT COLOR="#00A000">/* Laenge zurueckgeben */</FONT>
+    *lenOfFile = ((unsigned int)len);
+        
+    return data;
+    
+}
+
+<FONT COLOR="#00A000">/*EOF*/</FONT>
+</PRE></BODY></HTML>

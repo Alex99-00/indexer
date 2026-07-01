@@ -1,0 +1,26 @@
+<HTML><BODY><B>datei.c</B><BR><PRE>
+<BR><B><A HREF="../refered/Stat.htm" NAME="Stat">Stat</A></B>
+int Stat( char *fname, structStat *fstatus ) 
+<BR>
+<BR><B><A HREF="../refered/findFile.htm" NAME="findFile">findFile</A></B>
+int findFile ( char *fname ) 
+<BR>
+ 
+ Existiert Regulaere-Datei "fname" ?
+ -> Nicht Directory, nicht Geraetedateien!
+ 
+ IN : fname - path/name der zu testenden Datei
+ OUT: true(1)|false(0)
+<BR>
+<BR><B><A HREF="../refered/readFile.htm" NAME="readFile">readFile</A></B>
+char * readFile( char *fname, unsigned int *lenOfFile ) 
+<BR>
+  Liesst Datei "fname" ein und speichert die Laenge in "lenOfFile"
+  
+  IN:  fname - pfad/name der einzulesenden Datei
+       lenOfFile -  zum ablegen der Laenge des eingelesenen Dateiinhalts
+       
+  OUT: return - Dateiinhalt
+       lenOfFile - Laenge des eingelesenen Dateiinhalts
+<BR>
+</PRE></BODY></HTML>

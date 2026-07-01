@@ -1,0 +1,159 @@
+.TH TRACEROUTE 1 "6 December 2000"
+.UC 6
+.SH NAME
+traceroute \- print the route packets take to network host
+.SH SYNOPSIS
+.na
+.BR traceroute " [" \-46FnrR "] [" "\-f first_ttl" "] [" "-p port" ]
+.br
+.ti +8
+.BR "" [ "-m max_hops" "] [" "-N concurrent_hops" ]
+.br
+.ti +8
+.BR "" "[" "-t tos" "] [" "-w timeout" "] [" "-q nqueries" ] 
+.br
+.ti +8
+.BR "" "[" "-S source_addr" "] [" "-I interface" "]
+.br
+.ti +8
+.BR "" [ "-g gateway" "] " host " [" "packetlen" "]"
+.br
+.BR traceroute6
+.RI " [" options ]
+.ad
+.SH DESCRIPTION
+.I traceroute
+tracks the route packets take across a TCP/IP network on their
+way to a given host. It utilizes the IP protocol's time to live (TTL) field
+and attempts to elicit an ICMP TIME_EXCEEDED response from each gateway
+along the path to the host.
+.P
+.I traceroute6
+is just another name for the same program, and is equivalent to
+invoking
+.I traceroute
+with the
+.B \-6
+option.
+.SH OPTIONS
+The only required parameter is the name or IP address of the
+destination host. This paremeter can be followed by the size of the
+probing packet sent to that host (40 by default). Varying the
+size of the packet in conjunction with the
+.B \-F
+parameter can be used to obtain information about the MTU of
+individual network hops.
+.PP
+Additional options are:
+.TP
+.BR \-6 ", " \-4
+Explicitly force IPv4 or IPv6 traceouting. By default, the program
+will try to resolve the name given, and choose the appropriate
+protocol automatically. If resolving a host name returns both
+IPv4 and IPv6 addresses,
+.I traceroute
+will use IPv4. Invoking the program as
+.I traceroute6 
+is the same as using the
+.B -6
+option.
+.TP
+.B \-F
+Set the "Don't Fragment" bit. This tells intermediate routers not
+to fragment the packet when they find it's too big for a network
+hop's MTU.
+.TP
+.BI \-f " first_ttl
+Specifies with what TTL to start. Defaults to 1.
+.TP
+.BI \-g " gateway
+Tells traceroute to add an IP source routing option to the outgoing
+packet that tells the network to route the packet through the
+specified
+.IR gateway .
+Not very useful, because most routers have disabled source routing
+for security reasons.
+.TP
+.BI \-I " interface
+Specifies the interface through which to 
+.I traceroute
+should send packets. By default, the interface is selected
+according to the routing table.
+.TP
+.BI \-m " max_hops
+Specifies the maximum number of hops
+.I traceroute
+will probe. The default value is 30.
+.TP
+.BI \-N " concurrent_hops
+Specifies the number of probe packets sent out simultaneously.
+Sending several probes concurrently can speed up
+.I traceroute
+considerably. However, when specifying a number that's too large,
+the destination host will start to throw away random ICMP
+responses (if it implements ICMP rate throttling), and
+.I traceroute
+will be unable to detect the final hope reliably.
+The default value is 6.
+.TP
+.BI \-n
+Do not try to map IP addresses to host names when displaying them.
+.TP
+.BI \-p " port
+Specifies the UDP destination port base
+.I traceroute
+will use. When sending its UDP probe packets, it will send them to
+.I port + hop - 1
+for each hop. If there are ports in this range in use on the
+destination host,
+.I traceroute
+will not be able to identify reliably when it has reached the
+destination host (probes will appear to time out). The default
+port is 33434; you can use
+.B \-p
+to change this to a different value.
+.TP
+.BI \-t " tos
+Set the IP Type of Service (TOS) and Precedence value. Useful values
+are 16 (low delay) and 8 (high throughput). Note that in order to use
+some TOS precendence values, you have to be super user.
+.TP
+.BI \-w " sec
+Wait for
+.I sec
+seconds before sending the next probe packet.
+.IP
+Note that unlike older
+.I traceroute
+versions, this implementation will transmit several probe packets
+in parallel, for different hop values. However, it will never
+send more than 1 packet per hop value at the same time.
+.TP
+.BI \-q " numqueries
+Sets the number of probe packets per hop. The default value is 3.
+.TP
+.BI \-r
+Bypass the normal routing tables and send directly to a host on
+an attached network.  If the host is not on a directly-attached
+network, an error is returned.  This option can be used to ping a
+local host through an interface that has no route through it.
+.TP
+.BI \-R
+Set the loose source route option on outgoing packets, asking
+intermediate routers to record their address as the packet passes.
+This can be useful if you want to find the address of an intermediate
+router that has been configured to not respond to traceroute packets.
+.IP
+This feature hasn't been implemented yet.
+.TP
+.BI \-S " source_addr
+Chooses an alternative source address. Note that you must select the
+address of one of the interfaces.
+By default, the address of the outgoing interface is used.
+.SH SEE ALSO
+.BR ping (8),
+.BR netstat (8).
+.SH AUTHOR
+Concept and command line options based on the original LBL implementation
+of traceroute, written by Van Jacobson. This implentation is a complete
+rewrite and redesign, written and copyright (C) 2000 Olaf Kirch <okir@caldera.de>.

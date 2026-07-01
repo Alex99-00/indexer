@@ -1,0 +1,88 @@
+.TH ziptool 1 "Linux tools for Iomega JAZ and ZIP drives Version 1.1" \" -*- nroff -*-
+.SH NAME
+jaztool, ziptool \- Tool for Iomega JAZ and ZIP drives
+.SH SYNOPSIS
+.B jaztool
+option device [mountdir]
+.br
+.B ziptool
+option device [mountdir]
+.SH DESCRIPTION
+Disk write-protection is done by software for Iomega's JAZ and ZIP drives.
+.BR jaztool
+and
+.BR ziptool
+make these features available for Linux. Before performing any protection
+mode changes, it is checked that
+.I device
+is actually a JAZ or ZIP drive and that no partition of the inserted disk
+is currently mounted.
+.PP
+.SH OPTIONS
+.PP
+.TP 8
+.B \-e
+Eject the disk.
+.TP 8
+.B \-ro
+Make disk read\-only. If the current mode is protected by a password, you
+are prompted for it.
+.TP 8
+.B \-rp
+Make disk read\-only and protect this mode with a password. The maximum
+length of a password is 33 characters.
+.RS
+.PP
+.B WARNING:
+Don't forget the password! Otherwise you will have to reformat the disk
+in order to remove write\-protection.
+.RE
+.TP 8
+.B \-rw
+Remove any protection from the disk. If the current mode is protected by
+a password, you are prompted for it.
+.TP 8
+.B \-ld
+Lock the Drive door so the disk cannot be ejected.  Only works if the disk
+is already mounted.
+.TP 8
+.B \-ud
+Unlock the Drive door
+.TP 8
+.B \-m
+Mount the device dev4 on [dir], then lock the door (like -ld)
+.TP 8
+.B \-u 
+Unmount the device dev4.
+.TP 8
+.B \-s
+Get the current protection status. Supported modes are:
+.RS
+.IP
+unprotected
+.br
+write-protected
+.br
+password write-protected
+.RE
+.SH BUGS
+Changing password if the disk is password write-protected is
+currently not supported. If you want to change the password now you
+first have to remove protection from the disk or put it into the
+write protected mode and after that switch it back to password
+write-protected mode.
+.PP
+Not all protection modes offered by the JAZ and ZIP drives can be
+supported under Linux (i.e. password read and write-protected mode).
+.SH AUTHOR
+Mirko Kraft (Mirko.Kraft@ixos.de)
+.br
+Modified Slightly to Support 2GB Drives, and -m -u -ld -ud features
+by Aaron Segura (aaronsegura@netscape.net) 09/25/99
+.PP
+.B ziptool
+is based on the great work of Grant R. Guenther (grant@torque.net) and
+Itai Nahshon.
+.B jaztool
+was originally written by Bob Willmot (bwillmot@cnct.com,
+http://www.cnct.com/~bwillmot).

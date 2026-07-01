@@ -1,0 +1,406 @@
+<HTML><BODY><B>hashtbl.c</B><BR><PRE>
+<BR><B><A HREF="../refered/isPrim.htm" NAME="isPrim">isPrim</A></B>
+int isPrim(unsigned int val) 
+<BR>
+------------------------------------------------------------------------
+  Berechnet ob Parameter "val" eine Primzahl ist.
+  
+  IN: val - zu testende Zahl
+  
+  OUT: return - true(1)|false(0) 
+<BR>
+<BR><B><A HREF="../refered/calcNextPrim.htm" NAME="calcNextPrim">calcNextPrim</A></B>
+unsigned int calcNextPrim(unsigned int val) 
+<BR>
+  Berechnet die naechstgroessere Primzahl zu "val".
+  
+  IN: val - Basiswert zu der die naechste Primzahl gesucht wird
+  
+  OUT: return - Primzahl
+<BR>
+<BR><B><A HREF="../refered/calcDoppelHash.htm" NAME="calcDoppelHash">calcDoppelHash</A></B>
+unsigned int calcDoppelHash( unsigned int val, unsigned int htsize ) 
+<BR>
+ 
+   Berechnet einen Doppelhash Wert aus "val" und "htsize".
+   
+   ACHTUNG: htsize muss groesser sein als mod Wert
+   --> Endlosschleife 
+   
+   IN: val - Wert der durch "calcHash" berechnet wurde
+       htsize - Maximal moegliche Groesse
+   
+   OUT: return - Doppelhash Wert
+<BR>
+<BR><B><A HREF="../refered/calcHash.htm" NAME="calcHash">calcHash</A></B>
+unsigned int calcHash( char *str, HashTbl *htbl ) 
+<BR>
+  Berechnet einen Hashwert aus dem String auf den "str" zeigt.
+  Maximal Hashwert: htbl->size
+  
+  IN: str - Zeiger auf String, der zur Berechnung benutzt wird
+      htbl - 
+  
+  OUT: return - Hashwert
+<BR>
+<BR><B><A HREF="../refered/iniHTBL.htm" NAME="iniHTBL">iniHTBL</A></B>
+int iniHTBL( HashTbl *htbl ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Initialisierung einer Hashtabellen Struktur.
+  
+  Besonderheit: 
+  Jede! HashTbl Variable ist ueber iniHTBL(...) zu initialiseren
+  und die Rueckgabe ist auszuwerten. Alle weiteren xxxHTBL oder
+  xxxWHTBL Funktionen testen die Pointer nur noch mit assert(...) ab.
+  
+  IN: htbl - Hashtabelle die Initialisert wird
+  
+  OUT: return - true(0)|false(-1)
+       htbl - Initialisierte Hashtabelle
+<BR>
+<BR><B><A HREF="../refered/clearFirstNode.htm" NAME="clearFirstNode">clearFirstNode</A></B>
+void clearFirstNode( FirstNode *fnode ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Loescht eine FirstNode Struktur samt aller Inhalte.
+  
+  IN: fnode - FirstNode die geloescht werden soll
+  
+  OUT: fnode - Mit NULL Initialiseirt
+<BR>
+<BR><B><A HREF="../refered/clearHTBL.htm" NAME="clearHTBL">clearHTBL</A></B>
+void clearHTBL( HashTbl *htbl ) 
+<BR>
+  Loescht eine Hashtabellen Struktur samt aller Inhalte.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle die geloescht werden soll
+  
+  OUT: htbl - Geloescht und initialisiert
+<BR>
+<BR><B><A HREF="../refered/addFNameHTBL.htm" NAME="addFNameHTBL">addFNameHTBL</A></B>
+void addFNameHTBL( HashTbl *htbl, char *fname ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Fuegt einer Hashtabellen Struktur einen Dateinamen hinzu.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle die einen neuen Dateinamen aufnehmen soll
+      fname - Dateiname der hinzugefuegt werden soll
+      
+  OUT: htbl - "fname" dem Dateinamenarray zugefuegt
+<BR>
+<BR><B><A HREF="../refered/subFNameHTBL.htm" NAME="subFNameHTBL">subFNameHTBL</A></B>
+void subFNameHTBL( HashTbl *htbl, unsigned int idx ) 
+<BR>
+  Entfernt einen Dateinamen aus der Hashtabelle.
+  
+  Besonderheit:
+  Keine Fehlerauswertung. Uebergebener Index "idx" muss mit
+  getFNameIdxHTBL(...) erstellt worden sein. Fehlerabfrage dort!
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle aus der der Dateiname entfernt werden soll
+      idx - Index des Dateinamens in htbl.fnames[]
+  
+  OUT: htbl - Mit geloeschter Datei an idx
+<BR>
+<BR><B><A HREF="../refered/getFNameIdxHTBL.htm" NAME="getFNameIdxHTBL">getFNameIdxHTBL</A></B>
+int getFNameIdxHTBL( HashTbl *htbl, char *fname, unsigned int *fidx ) 
+<BR>
+  Sucht den Index des Dateinamens "fname" in htbl.fnames[] und gibt
+  ihn ueber "fidx" zurueck.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle
+      fname - Dateiname der gesucht werden soll
+      fidx - Speicher zum ablegen des Indexes
+      
+  OUT: return - true(0)|false(-1)
+       fidx - Index des Dateinamens wenn gefunden, sonst undef
+<BR>
+<BR><B><A HREF="../refered/copyFNamesHTBL.htm" NAME="copyFNamesHTBL">copyFNamesHTBL</A></B>
+void copyFNamesHTBL( HashTbl *dsthtbl, HashTbl *srchtbl ) 
+<BR>
+  Kopiert! alle Dateinamen aus "srchtbl" nach "dsthtbl".
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: srchtbl - Quell Hashtabelle
+      dsthtbl - Ziel Hashtabelle
+      
+  OUT: dsthtbl - Hashtabelle mit den Dateinamen aus "srchtbl"
+<BR>
+<BR><B><A HREF="../refered/printFNamesHTBL.htm" NAME="printFNamesHTBL">printFNamesHTBL</A></B>
+void printFNamesHTBL( HashTbl *htbl ) 
+<BR>
+  Druckt die Dateinamenliste au stdout aus.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL
+  
+  IN: htbl - Hashtabelle dessen Dateinamen gedruckt werden sollen
+  
+  OUT:
+<BR>
+<BR><B><A HREF="../refered/finalizeSizeWHTBL.htm" NAME="finalizeSizeWHTBL">finalizeSizeWHTBL</A></B>
+void finalizeSizeWHTBL( HashTbl *htbl ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Setzt die finale Groesse einer WHTBL
+  
+  Besonderheit:
+  NICHT auf eine HTBL anwendbar! Nur WHTBL.
+  
+  IN: htbl - Hashtabelle die bearbeitet werden soll
+  
+  OUT: htbl - Verkleinerte Hashtabelle
+<BR>
+<BR><B><A HREF="../refered/resizeHTBL.htm" NAME="resizeHTBL">resizeHTBL</A></B>
+void resizeHTBL( HashTbl *htbl ) 
+<BR>
+ 
+  Vergroessert eine Hashtabelle, damit sie mehr Woerter aufnehmen kann.
+  
+  Besonderheit:
+  NICHT auf eine HTBL anwendbar, Wortliste->Hashtabelle ueber buildHTBL. 
+  Nur WHTBL!
+  
+  IN: htbl - Hashtabelle deren Groesse veraendert werden soll
+  
+  OUT: htbl - Vergroesserte Hashtabelle
+<BR>
+<BR><B><A HREF="../refered/setSizeHTBL.htm" NAME="setSizeHTBL">setSizeHTBL</A></B>
+void setSizeHTBL( HashTbl *htbl, unsigned int size ) 
+<BR>
+  Setzt die Groesse einer Hashtabelle und initialisiert diese mit
+  NULL Werten.
+  
+  Besonderheit:
+  Nur auf leere oder neue Hashtabellen anwenden! Kann man
+  aber auch zum anlegen einer Worttabelle benutzen.
+  
+  IN: htbl - Hashtabelle deren Groesse geaendert werden soll
+      size - neue Groesse der Hashtabelle
+      
+  OUT: htbl - Auf "size" groesse gesetzte, initialis. Hashtabelle 
+<BR>
+<BR><B><A HREF="../refered/newNode.htm" NAME="newNode">newNode</A></B>
+Node * newNode(void) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Erstellt einen neuen Speicherbereich des Datentyps "Node" und gibt
+  diesen zurueck. Der "next" Zeiger wird mit einer NULLreferenz 
+  initialisiert.
+  
+  IN:
+  
+  OUT: return - Zeiger auf Speicherbereich der Groesse / des Typs  Node
+<BR>
+<BR><B><A HREF="../refered/addWordWHTBL.htm" NAME="addWordWHTBL">addWordWHTBL</A></B>
+void addWordWHTBL( HashTbl *htbl, char *word, unsigned int fidx, 
+                 unsigned int col, unsigned int row ) 
+<BR>
+  Haengt ein neues Wort an eine WHTBL an.
+  
+  Besonderheit:
+  NICHT auf eine HTBL anwendbar!    
+  
+  IN: htbl - WHTBL an die das Wort angehaengt werden soll
+      word - Wort das hinzugefuegt werden soll
+      fidx - Index im Dateinamenarray fuer dieses Wort
+      col - Spalte in der das Wort steht
+      row - Zeile in der das Wort steht
+  
+  OUT: htbl - WHTBL an die das Wort angehaengt wurde
+<BR>
+<BR><B><A HREF="../refered/setWordHTBL.htm" NAME="setWordHTBL">setWordHTBL</A></B>
+void setWordHTBL( HashTbl *htbl, FirstNode *fnode, unsigned int idx ) 
+<BR>
+  Setzt ein Wort an eine bestimmbare Stelle in der Hashtabelle.
+  
+  
+  Besonderheit:
+  Es wird mit einer bestehenden FirstNode Struktur gearbeitet.
+  In "fnode" wird der Ursprung auf NULL gesetzt.
+  Ist auf WHTBL anwendbar.
+  
+  Anmerkung:
+  if-Zweig -> Anstatt der FirstNode Inhalte können auch die FirstNdes(s)
+  der Tabellen ausgetauscht werden.
+    
+  
+  IN: htbl - Hashtabelle in der das Wort gesetzt werden soll
+      fnode - FirstNode Struktur die eingesetzt werden soll
+      idx - Position in der Hashtabelle an die das Wort gesetzt werden soll
+  
+  OUT: htbl Hashtabelle an die an "idx" "fnode" angehaengt wurde
+<BR>
+<BR><B><A HREF="../refered/getWordIdxHTBL.htm" NAME="getWordIdxHTBL">getWordIdxHTBL</A></B>
+int getWordIdxHTBL( HashTbl *htbl, char *word, unsigned int *idx ) 
+<BR>
+  Bestimmt die Position eines Wortes in der Hashtabelle.
+  
+  Besonderheit:
+  Funktioniert nur mit HTBL.
+  
+  IN: htbl - Hashtabelle in der die Wortposition bestimmt werden soll
+      word - Suchwort
+      idx - Position des Wortes in der Hashtabelle
+      
+  OUT: return - fehler(-1)|true(1)|false(0)       
+<BR>
+<BR><B><A HREF="../refered/string2WHTBL.htm" NAME="string2WHTBL">string2WHTBL</A></B>
+int string2WHTBL( HashTbl *whtbl, char *data, unsigned int dataLen,
+                    char *aktFileName, Austab *austab ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Zerlegt eine Zeichenkette in Woerter.
+  
+  Besonderheit:
+  Funktioniert nur mit WHTBL.
+  
+  IN: whtbl - WHTBL, als Worttabelle(liste) genutzt
+      data - Zu zerlegende Zeichenkette
+      dataLen - Laenge der Zeichenkette
+      aktFileName - Dateiname zu der die Zeichenkette gehoert
+      austab - Ausschlusstabelle
+  
+  OUT: return - fehler(-1)|fehler(-2)|ok(0)
+       whtbl - WHTBL in die die gefundenen Woerter eingetragen wurden
+<BR>
+<BR><B><A HREF="../refered/makeSmallHTBL.htm" NAME="makeSmallHTBL">makeSmallHTBL</A></B>
+void makeSmallHTBL( HashTbl *srchtbl, HashTbl *dsthtbl ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Codeauslagerung aus buildHTBL
+  
+  Berechnet neue Positionen fuer die Eintraege aus srchtbl und
+  haengt die Referenzen entsprechend um.
+  Ist noetig da die dsthtbl eine kleinere groesse hat.
+  
+  IN: srchtbl - Quell Hashtabelle
+      dsthtbl - Ziel Hashtabelle
+  
+  OUT: dsthtbl - Neu aufgebaute Hashtabelle
+<BR>
+<BR><B><A HREF="../refered/buildHTBL.htm" NAME="buildHTBL">buildHTBL</A></B>
+int buildHTBL( HashTbl *srchtbl ) 
+<BR>
+  Erstellt aus einer WHTBL(Hashtabelle als Wortliste) eine 
+  HTBL(Hashtabelle).
+  
+  IN: srchtbl - Hashtabelle als Wortliste.
+      htbl - Ziel in das die Hashtabelle aufgebaut werden soll.
+      
+  OUT: return - fehler(-1)|ok(0)
+       htbl - Neu aufgebaute Hashtabelle
+<BR>
+<BR><B><A HREF="../refered/subFNameRefHTBL.htm" NAME="subFNameRefHTBL">subFNameRefHTBL</A></B>
+int subFNameRefHTBL( HashTbl *htbl, char *fname ) 
+<BR>
+  Entfernt aus einer Hashtabelle alle Referenzen auf Woerter aus
+  Datei "fname".
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle aus der die Referenzen entfernt werden sollen
+      fname - Dateiname anhand dessen die zu entfernenden Woerter erkannt 
+              werden
+  
+  OUT: return - fehler(-1)|ok(0)
+       htbl - HTBL aus der alle Refere. auf "fname" entfernt wurden
+<BR>
+<BR><B><A HREF="../refered/printHTBL.htm" NAME="printHTBL">printHTBL</A></B>
+void printHTBL( HashTbl *htbl ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Gibt eine Hashtabelle aud stdout aus.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Auszugebende Hashtabelle
+  
+  OUT:
+<BR>
+<BR><B><A HREF="../refered/printFirstNode.htm" NAME="printFirstNode">printFirstNode</A></B>
+void printFirstNode( HashTbl *htbl, unsigned int idx ) 
+<BR>
+  Gibt den Inhalt einer FirstNode Struktur aus stdout aus.
+  
+  IN: htbl - Hashtabelle
+      idx - Index der FirstNode in "htbl"
+  
+  OUT:
+<BR>
+<BR><B><A HREF="../refered/saveHTBL.htm" NAME="saveHTBL">saveHTBL</A></B>
+int saveHTBL( HashTbl *htbl, char *fname ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Speichert eine Hashtabelle Zeilenweise in eine Txtdatei.
+  
+  Besonderheit:
+  Funktioniert mit HTBL und WHTBL.
+  
+  IN: htbl - Hashtabelle die gespeichert werden soll
+      fname - Dateiname der Textdatei
+  
+  OUT: return - fehler(-1)|ok(0)
+<BR>
+<BR><B><A HREF="../refered/readHTBL.htm" NAME="readHTBL">readHTBL</A></B>
+int readHTBL( HashTbl *htbl, char *fname ) 
+<BR>
+  Liesst eine von diesem Programm gespeicherte Indexdatei ein
+  und baut eine fertige Hashtabelle auf.
+  
+  Besonderheit:
+  Eine fehlerhafte Indexdatei kann zu undefiniertem Verhalten fuehren.  
+  
+  IN: htbl - Hashtabelle in die die Daten abgelegt werden sollen
+      fname - Dateiname der Textdatei
+  
+  OUT: return - fehler(-1)|ok(0)
+       htbl - Hashtabelle aus Daten aus "fname" aufgebaut
+<BR>
+<BR><B><A HREF="../refered/readWHTBL.htm" NAME="readWHTBL">readWHTBL</A></B>
+int readWHTBL( HashTbl *whtbl, char *fname ) 
+<BR>
+  Liesst eine von diesem Programm gespeicherte Indexdatei ein.
+  
+  IN: whtbl - Hashtabelle, als Wortliste, in die die Daten abgelegt werden
+              sollen
+      fname - Dateiname der Textdatei
+  
+  OUT: return - fehler(-1)|ok(0)
+       whtbl - WHTBL in die alle daten aus "fname" eingetragen wurden
+<BR>
+<BR><B><A HREF="../refered/searchHTBL.htm" NAME="searchHTBL">searchHTBL</A></B>
+void searchHTBL( HashTbl *htbl ) 
+<BR>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+  Sucht in einer Hashtabelle nach Woertern, die von stdin gelesen werden.
+  Die/Das Ergebnis wird auf stdout ausgegeben.
+  IN: htbl - Hashtabelle in der gesucht werden soll
+  
+  OUT:
+<BR>
+</PRE></BODY></HTML>

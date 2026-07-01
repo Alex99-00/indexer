@@ -1,0 +1,33 @@
+<HTML><BODY><B>alloc.c</B><BR><PRE>
+<BR><B><A HREF="../refered/MALLOC.htm" NAME="MALLOC">MALLOC</A></B>
+void * MALLOC (size_t size) 
+<BR>
+  Reserviert "size" Bytes an Speicher und gibt einen Zeiger auf den 
+  Anfang des Speicherbereichs zurueck.
+  
+  IN: size - Groesse des benoetigten Speicherbereichs
+  
+  OUT: return - Pointer auf den Speicherbereich
+  
+<BR>
+<BR><B><A HREF="../refered/REALLOC.htm" NAME="REALLOC">REALLOC</A></B>
+void * REALLOC (void *ptr, size_t size) 
+<BR>
+  Veraendert die Groesse des durch ptr gekennzeichneten Speicherbereichs
+  auf die Groesse die durch "size" beschrieben wird.
+  
+  IN: ptr - Zeiger auf bereits vorhandenen Speicherbereich oder NULL
+      size - neue groesse des Speicherbereichs
+      
+  OUT: return - Pointer auf den Speicherbereich
+<BR>
+<BR><B><A HREF="../refered/FREE.htm" NAME="FREE">FREE</A></B>
+void * FREE (void *ptr) 
+<BR>
+  Gibt den Speicherbereich auf den "ptr" zeigt frei.
+  
+  IN: ptr - Zeiger auf freizugebenen Speicherbereich
+  
+  OUT: return - NULL
+<BR>
+</PRE></BODY></HTML>

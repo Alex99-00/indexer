@@ -1,0 +1,137 @@
+<HTML><BODY><PRE>
+<FONT COLOR="#00A000">/*
+BEGIN  C-Head v0.2
+
+
+  -Von:
+   Alexander Klupsch, ia3394
+
+
+  -Dateiname:
+   austab.c
+
+
+  -Sprache:
+   ANSI-C
+
+
+  -Main(0|1):
+   0
+
+
+  -Zweck/Beschreibung:
+   Aufbau einer Ausschlusstabelle fuer Datentyp "char".
+
+
+  -Programm:
+   indexer
+
+
+  -Besonderheiten:
+   
+
+END---------------------------------------------------------------------75->
+*/</FONT>
+
+#include &lt;stdio.h>
+#include &lt;string.h>
+#include &lt;assert.h>
+
+#include &lt;alloc.h>
+#include &lt;datei.h>
+#include &lt;austab.h>
+
+
+
+
+<FONT COLOR="#00A000">/*
+  Gibt den Inhalt einer Ausschlusstabelle aus.
+  
+  IN: atbl - Zeiger auf eine Ausschlusstabelle
+  
+  OUT: atbl - Initialisierte Auschlusstabelle
+*/</FONT>
+void <A HREF="../refered/printAustab.htm">printAustab</A>( Austab *atbl ) <A NAME="printAustab">{</A>
+     int i;
+     
+     if ( atbl == NULL ) {
+          printf("Ausschlusstabelle fehlerhaft. Ausgabe nicht moeglich.\n");
+          return ;
+     }
+     
+     for ( i=0; i&lt;=255; i++) {
+           printf("%d: %d : %c\n", i, atbl->tbl[i], i);
+     }
+     printf("\n");
+}
+
+
+static void <A HREF="../refered/resetAustab.htm">resetAustab</A>( Austab *atbl ) <A NAME="resetAustab">{</A>
+     int i;
+     
+     assert( atbl != NULL );
+     
+     <FONT COLOR="#00A000">/* reset Austab -> alle Elemente auf (false=0) */</FONT>
+     for ( i = 0; i &lt; 256; i++ ) {
+           atbl->tbl[i] = 0;
+     }
+}
+
+
+<FONT COLOR="#00A000">/*
+  Baut die Ausschlusstabelle auf.
+  Die Daten die angeben welche Zeichen Auszuschliessen sind, sind
+  in "austab.h" als "AUSTABDATA" definiert. Da die Daten fest
+  im Programm stehen, ist ein Fehlerfall eigentlich auszuschliessen.
+  
+  IN: atbl - Zeiger auf eine ATabelle
+  
+  OUT: atbl - Mit Daten gefuellte ATabelle 
+*/</FONT>
+int <A HREF="../refered/buildAustab.htm">buildAustab</A>( Austab *atbl ) <A NAME="buildAustab">{</A>
+     char *ptr;
+     int i, zeichen, scanRet;
+     unsigned int von, bis;
+     
+     if ( atbl == NULL )
+          return (-1);
+     
+     <A HREF="../refered/resetAustab.htm" NAME="resetAustab1">resetAustab</A>( atbl );		 
+
+     ptr =  AUSTABDATA;
+     
+     <FONT COLOR="#00A000">/* Zeilenweise einlesen */</FONT>
+     while ( (scanRet = sscanf( ptr, "%u-%u\n%n", &von, &bis, &zeichen ))
+             != EOF ) {
+
+              ptr += zeichen;
+   
+            
+              if ( (von >= 255) || (bis > 255) ) {
+                   fprintf( stderr, "Ausschlusstabelle konnte nicht \
+aufgebaut werden.\nDateninput fehlerhaft.\n" );
+                   return (-1);
+              }
+   
+              <FONT COLOR="#00A000">/* Bereich von -> bis auf true=1 setzen */</FONT>
+              switch (scanRet) {
+                 case 2:
+                  for ( i = von; i &lt;= bis; i++ ) {
+                        atbl->tbl[i] = 1;
+                  }
+                 break;
+   
+       
+                 default: 
+                  fprintf( stderr, "Ausschlusstabelle konnte nicht \
+aufgebaut werden.\nDateninput fehlerhaft.\n" );                  
+                  return (-1);
+                 break;
+              }
+     }
+     
+     return 0;
+}
+
+<FONT COLOR="#00A000">/*EOF*/</FONT>
+</PRE></BODY></HTML>

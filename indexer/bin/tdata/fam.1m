@@ -1,0 +1,155 @@
+.nr X
+.if \nX=0 .ds x} fam 1M "Silicon Graphics" "\&"
+.TH \*(x}
+.SH NAME
+fam \- file alteration monitor
+.SH SYNOPSIS
+.nf
+\f3/usr/etc/fam\f1 [ \f3\-f\f1 | \f3\-v\f1 | \f3\-d\f1 ] [ \f3\-l\f1 | \c
+\f3\-t\f1 \f2NFS_polling_interval\f1 ] 
+	[ \f3\-T\f1 \f2idle_timeout\f1 ] [ \f3\-p\f1 \c
+\f2program\f3.\f2version\f1 ] [ \f3\-L\f1 ] [ \f3-C\f1 ]
+	[ \f3-c\f1 \f2config_file\f1 ]
+.fi
+.SH DESCRIPTION
+\f2fam\f1 is a server that tracks changes to the filesystem and
+relays these changes to interested applications.
+Applications such as
+\f2fm\f1(1G) and \f2mailbox\f1(1) present an up-to-date view of the filesystem.
+In the absence of \f2fam\f1, these applications and others like them
+are forced to poll the filesystem to detect changes.
+\f2fam\f1 is
+more efficient.
+.P
+Applications can request \f2fam\f1 to monitor any files or directories in
+any filesystem.
+When \f2fam\f1 detects changes to monitored files, it notifies
+the appropriate application.
+The FAM API provides a programmatic interface to \f2fam\f1; see
+.IR fam (3X).
+.P
+\f2fam\f1 is informed of filesystem changes as they happen by the
+kernel through the \f2imon\f1(7M) pseudo device driver.
+If asked to
+monitor files on an NFS mounted filesystem, \f2fam\f1 tries to use
+\f2fam\f1 on the NFS server to monitor files.
+If \f2fam\f1 cannot
+contact a remote \f2fam\f1, it polls the files instead.
+\f2fam\f1 also polls special files.
+.P
+Normally, \f2fam\f1 is started by \f2inetd\f1(1M).
+It is registered with
+\f2portmap\f1(1M) as performing the sgi_fam service.
+.SH OPTIONS
+.TP 26
+\f3\-l\f1
+Disable polling of NFS
+files.
+It does not disable use of remote \f2fam\f1 on NFS servers,
+nor does it disable polling of local files.
+.TP
+\f3\-t\f1 \f2NFS_polling_interval\f1
+Set the interval for polling files to \f2NFS_polling_interval\f1 seconds.
+The default
+is six seconds.
+.TP
+\f3\-T\f1 \f2idle_timeout\f1
+Set the idle timeout interval to \f2idle_timeout\f1.
+fam exits \f2idle_timeout\f1 seconds after its
+last client disconnects.
+A value of 0 causes fam to wait indefinitely for new connections.
+The default is five seconds.
+.TP
+\f3\-f\f1
+Remain in the foreground instead of spawning a child and exiting.
+This option is ignored if \f2fam\f1 is started by \f2inetd\f1.
+.TP
+\f3\-v\f1
+Turn on verbose messages.
+.TP
+\f3\-d\f1
+Enable verbose messages and debug messages.
+.TP
+\f3\-p\f1 \f2program\f3.\f2version\f1
+Use the specified RPC program and version numbers.
+.TP
+\f3\-L\f1
+Local-only mode.  \f2fam\f1 will only accept requests from clients running on the
+local machine.  This overrides the \f2local_only\f1 flag in the configuration
+file.  This option is ignored if \f2fam\f1 is started by \f2inetd\f1.
+.TP
+\f3\-C\f1
+Compatibility mode.  This disables authentication and reduces access security
+as described under SECURITY below.  This overrides the
+\f2insecure_compatibility\f1 flag in the configuration file.
+.TP
+\f3\-c\f1 \f2config_file\f1
+Read configuration information from the given file rather than the default,
+which is \f2/etc//fam.conf\f1.
+.SH "CONFIGURATION FILE"
+In addition to its command-line options, \f2fam\f1's behavior can also be
+controlled through its configuration file.  By default, this is
+\f2/etc//fam.conf\f1; the \f3\-c\f1 command-line option can be used to specify
+an alternate file.  Configuration lines are in the format \f2option=value\f1.
+Lines beginning with \f2#\f1 or \f2!\f1 are ignored.
+\f2fam\f1 recognizes the following options:
+.TP 26
+\f3insecure_compatibility\f1
+If set to \f2true\f1, this disables authentication and reduces access security
+as described under SECURITY below.  This is \f2false\f1 by default.  Setting
+this option to \f2true\f1 is the same as using the \f3\-C\f1 command-line
+option.
+.TP
+\f3untrusted_user\f1
+This is the user name or UID of the user account which \f2fam\f1 will use for
+unauthenticated clients.  If a file can't be \f2stat\f1'ed by this user,
+\f2fam\f1 will not tell unauthenticated clients about the file's existence.
+If an untrusted user is not given in the configuration file, \f2fam\f1 will
+write an error message to the system log and terminate.
+.TP
+\f3local_only\f1
+If set to \f2true\f1, \f2fam\f1 will ignore requests from remote \f2fam\f1s.
+This is \f2false\f1 by default.  Setting this option to \f2true\f1 is the same
+as using the \f3\-L\f1 command-line option.  This option is ignored if
+\f2fam\f1 is started by \f2inetd\f1.
+.TP
+\f3idle_timeout\f1
+This is the time in seconds that fam will wait before exiting after its last
+client disconnects.  The default is five seconds.  This option is overridden
+by the \f3-T\f1 command-line option.
+.TP
+\f3nfs_polling_interval\f1
+This is the interval in seconds between polling files over an NFS filesystem.
+The default is six seconds.  This option is overridden by the \f3-t\f1
+command-line option.
+.TP
+\f3xtab_verification\f1
+If set to \f2true\f1, \f2fam\f1 will check the list of exported filesystems
+when remote requests are received to verify that the requests fall on
+filesystems which are exported to the requesting hosts.  This is
+\f2true\f1 by default.  If this option is set to \f2false\f1, \f2fam\f1 will
+service remote requests without attempting to perform the verification.  If
+the \f2local_only\f1 configuration option or \f3-L\f1 command-line option is
+used, \f2xtab_verification\f1 has no effect.
+.SH SECURITY
+For backward compatibility, the \f3\-C\f1 command-line option and
+\f2insecure_compatibility\f1 configuration option can be used to disable
+authentication.  Configuring \f2fam\f1 this way opens a publically known 
+security weakness whereby a "rogue client" can obtain the names of all the
+files and directories on the system.
+.P
+\f2Note that fam never opens the files it's monitoring\f1, and cannot
+be used by a rogue client to read the contents of any file on the system.
+\f2fam\f1 only gives out the names of monitored files, and only monitors files
+which the client can
+.IR stat (1M).
+Users can stat a file without having read permission on it as long as
+they have search permission on the directory containing it.
+.SH FILES
+/etc//fam.conf
+.SH "SEE ALSO"
+inetd(1M),
+portmap(1M),
+fam(3X),
+imon(7M),
+stat(1M).
